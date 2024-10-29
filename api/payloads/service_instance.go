@@ -243,3 +243,22 @@ func (l *ServiceInstanceList) DecodeFromURLValues(values url.Values) error {
 	l.IncludeResourceRules = append(l.IncludeResourceRules, params.ParseFields(values)...)
 	return nil
 }
+
+type ServiceInstanceDelete struct {
+	Purge bool `json:"purge"`
+}
+
+func (d *ServiceInstanceDelete) SupportedKeys() []string {
+	return []string{
+		"purge",
+	}
+}
+
+func (d *ServiceInstanceDelete) DecodeFromURLValues(values url.Values) error {
+	var err error
+	if d.Purge, err = getBool(values, "purge"); err != nil {
+		return err
+	}
+
+	return nil
+}
