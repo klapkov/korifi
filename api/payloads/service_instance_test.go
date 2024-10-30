@@ -90,6 +90,7 @@ var _ = Describe("ServiceInstanceList", func() {
 				Names:         []string{"n1", "n2"},
 				SpaceGUIDs:    []string{"sg1", "sg2"},
 				GUIDs:         []string{"g1", "g2"},
+				OrderBy:       "order",
 				LabelSelector: "foo=bar",
 			}))
 		})
