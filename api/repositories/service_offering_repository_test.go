@@ -16,6 +16,7 @@ import (
 
 var _ = Describe("ServiceOfferingRepo", func() {
 	var repo *repositories.ServiceOfferingRepo
+	var broker *korifiv1alpha1.CFServiceBroker
 
 	BeforeEach(func() {
 		repo = repositories.NewServiceOfferingRepo(
@@ -26,31 +27,30 @@ var _ = Describe("ServiceOfferingRepo", func() {
 				rootNamespace,
 			),
 		)
+
+		broker = &korifiv1alpha1.CFServiceBroker{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: rootNamespace,
+				Name:      uuid.NewString(),
+			},
+			Spec: korifiv1alpha1.CFServiceBrokerSpec{
+				ServiceBroker: services.ServiceBroker{
+					Name: uuid.NewString(),
+				},
+			},
+		}
+		Expect(k8sClient.Create(ctx, broker)).To(Succeed())
 	})
 
 	Describe("Get", func() {
 		var (
 			offeringGUID    string
-			broker          *korifiv1alpha1.CFServiceBroker
 			desiredOffering repositories.ServiceOfferingRecord
 			getErr          error
 		)
 
 		BeforeEach(func() {
 			offeringGUID = uuid.NewString()
-
-			broker = &korifiv1alpha1.CFServiceBroker{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: rootNamespace,
-					Name:      uuid.NewString(),
-				},
-				Spec: korifiv1alpha1.CFServiceBrokerSpec{
-					ServiceBroker: services.ServiceBroker{
-						Name: uuid.NewString(),
-					},
-				},
-			}
-			Expect(k8sClient.Create(ctx, broker)).To(Succeed())
 
 			Expect(k8sClient.Create(ctx, &korifiv1alpha1.CFServiceOffering{
 				ObjectMeta: metav1.ObjectMeta{
@@ -132,11 +132,114 @@ var _ = Describe("ServiceOfferingRepo", func() {
 		})
 	})
 
+	Describe("Patch", func() {
+		var (
+			offeringGUID    string
+			patchedOffering repositories.ServiceOfferingRecord
+			patchMessage    repositories.PatchServiceOfferingMessage
+			patchErr        error
+		)
+
+		BeforeEach(func() {
+			offeringGUID = uuid.NewString()
+
+			Expect(k8sClient.Create(ctx, &korifiv1alpha1.CFServiceOffering{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: rootNamespace,
+					Name:      offeringGUID,
+					Labels: map[string]string{
+						korifiv1alpha1.RelServiceBrokerGUIDLabel: broker.Name,
+						korifiv1alpha1.RelServiceBrokerNameLabel: broker.Spec.Name,
+					},
+					Annotations: map[string]string{
+						"annotation": "annotation-value",
+					},
+				},
+				Spec: korifiv1alpha1.CFServiceOfferingSpec{
+					ServiceOffering: services.ServiceOffering{
+						Name:             "my-offering",
+						Description:      "my offering description",
+						Tags:             []string{"t1"},
+						Requires:         []string{"r1"},
+						DocumentationURL: tools.PtrTo("https://my.offering.com"),
+						BrokerCatalog: services.ServiceBrokerCatalog{
+							ID: "offering-catalog-guid",
+							Metadata: &runtime.RawExtension{
+								Raw: []byte(`{"offering-md": "offering-md-value"}`),
+							},
+							Features: services.BrokerCatalogFeatures{
+								PlanUpdateable:       true,
+								Bindable:             true,
+								InstancesRetrievable: true,
+								BindingsRetrievable:  true,
+								AllowContextUpdates:  true,
+							},
+						},
+					},
+				},
+			})).To(Succeed())
+
+			patchMessage = repositories.PatchServiceOfferingMessage{
+				GUID: offeringGUID,
+				Metadata: repositories.MetadataPatch{
+					Labels: map[string]*string{
+						"new-label1": tools.PtrTo("new-label1-value"),
+						"new-label2": tools.PtrTo("new-label2-value"),
+					},
+					Annotations: map[string]*string{
+						"new-annotation": tools.PtrTo("new-annotation-value"),
+					},
+				},
+			}
+		})
+
+		JustBeforeEach(func() {
+			patchedOffering, patchErr = repo.PatchServiceOffering(ctx, authInfo, patchMessage)
+		})
+
+		It("patches the service offering", func() {
+			Expect(patchErr).ToNot(HaveOccurred())
+			Expect(patchedOffering).To(
+				MatchFields(IgnoreExtras, Fields{
+					"ServiceOffering": MatchFields(IgnoreExtras, Fields{
+						"Name":             Equal("my-offering"),
+						"Description":      Equal("my offering description"),
+						"Tags":             ConsistOf("t1"),
+						"Requires":         ConsistOf("r1"),
+						"DocumentationURL": PointTo(Equal("https://my.offering.com")),
+						"BrokerCatalog": MatchFields(IgnoreExtras, Fields{
+							"ID": Equal("offering-catalog-guid"),
+							"Metadata": PointTo(MatchFields(IgnoreExtras, Fields{
+								"Raw": MatchJSON(`{"offering-md": "offering-md-value"}`),
+							})),
+							"Features": MatchFields(IgnoreExtras, Fields{
+								"PlanUpdateable":       BeTrue(),
+								"Bindable":             BeTrue(),
+								"InstancesRetrievable": BeTrue(),
+								"BindingsRetrievable":  BeTrue(),
+								"AllowContextUpdates":  BeTrue(),
+							}),
+						}),
+					}),
+					"CFResource": MatchFields(IgnoreExtras, Fields{
+						"GUID":      Equal(offeringGUID),
+						"CreatedAt": Not(BeZero()),
+						"UpdatedAt": BeNil(),
+						"Metadata": MatchAllFields(Fields{
+							"Labels":      HaveKeyWithValue("new-label1", "new-label1-value"),
+							"Annotations": HaveKeyWithValue("new-annotation", "new-annotation-value"),
+						}),
+					}),
+					"ServiceBrokerGUID": Equal(broker.Name),
+				}),
+			)
+		})
+	})
+
 	Describe("List", func() {
 		var (
 			offeringGUID        string
 			anotherOfferingGUID string
-			broker              *korifiv1alpha1.CFServiceBroker
 			listedOfferings     []repositories.ServiceOfferingRecord
 			message             repositories.ListServiceOfferingMessage
 			listErr             error
@@ -145,19 +248,6 @@ var _ = Describe("ServiceOfferingRepo", func() {
 		BeforeEach(func() {
 			offeringGUID = uuid.NewString()
 			anotherOfferingGUID = uuid.NewString()
-
-			broker = &korifiv1alpha1.CFServiceBroker{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: rootNamespace,
-					Name:      uuid.NewString(),
-				},
-				Spec: korifiv1alpha1.CFServiceBrokerSpec{
-					ServiceBroker: services.ServiceBroker{
-						Name: uuid.NewString(),
-					},
-				},
-			}
-			Expect(k8sClient.Create(ctx, broker)).To(Succeed())
 
 			Expect(k8sClient.Create(ctx, &korifiv1alpha1.CFServiceOffering{
 				ObjectMeta: metav1.ObjectMeta{

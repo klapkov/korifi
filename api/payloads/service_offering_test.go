@@ -5,8 +5,10 @@ import (
 
 	"code.cloudfoundry.org/korifi/api/payloads"
 	"code.cloudfoundry.org/korifi/api/repositories"
+	"code.cloudfoundry.org/korifi/tools"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gstruct"
 	"github.com/onsi/gomega/types"
 )
 
@@ -37,6 +39,65 @@ var _ = Describe("ServiceOfferingGet", func() {
 
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("unsupported query parameter"))
+	})
+})
+
+var _ = Describe("ServiceOfferingPatch", func() {
+	var (
+		patchPayload         payloads.ServiceOfferingPatch
+		serviceOfferingPatch *payloads.ServiceOfferingPatch
+		validatorErr         error
+	)
+
+	BeforeEach(func() {
+		serviceOfferingPatch = new(payloads.ServiceOfferingPatch)
+		patchPayload = payloads.ServiceOfferingPatch{
+			Metadata: payloads.MetadataPatch{
+				Annotations: map[string]*string{"ann1": tools.PtrTo("val_ann1")},
+				Labels:      map[string]*string{"lab1": tools.PtrTo("val_lab1")},
+			},
+		}
+	})
+
+	JustBeforeEach(func() {
+		validatorErr = validator.DecodeAndValidateJSONPayload(createJSONRequest(patchPayload), serviceOfferingPatch)
+	})
+
+	It("succeeds", func() {
+		Expect(validatorErr).NotTo(HaveOccurred())
+		Expect(serviceOfferingPatch).To(PointTo(Equal(patchPayload)))
+	})
+
+	When("nothing is set", func() {
+		BeforeEach(func() {
+			patchPayload = payloads.ServiceOfferingPatch{}
+		})
+
+		It("succeeds", func() {
+			Expect(validatorErr).NotTo(HaveOccurred())
+			Expect(serviceOfferingPatch).To(PointTo(Equal(patchPayload)))
+		})
+	})
+
+	When("metadata is invalid", func() {
+		BeforeEach(func() {
+			patchPayload.Metadata.Labels["foo.cloudfoundry.org/bar"] = tools.PtrTo("baz")
+		})
+
+		It("returns an appropriate error", func() {
+			expectUnprocessableEntityError(validatorErr, "label/annotation key cannot use the cloudfoundry.org domain")
+		})
+	})
+
+	It("converts the patch message correctly", func() {
+		msg := serviceOfferingPatch.ToMessage("offering-guid")
+		Expect(msg.GUID).To(Equal("offering-guid"))
+		Expect(msg.Metadata.Annotations).To(MatchAllKeys(Keys{
+			"ann1": PointTo(Equal("val_ann1")),
+		}))
+		Expect(msg.Metadata.Labels).To(MatchAllKeys(Keys{
+			"lab1": PointTo(Equal("val_lab1")),
+		}))
 	})
 })
 
