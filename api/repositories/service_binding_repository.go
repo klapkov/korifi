@@ -98,7 +98,14 @@ type DeleteServiceBindingMessage struct {
 
 type ListServiceBindingsMessage struct {
 	AppGUIDs             []string
+	AppNames             []string
 	ServiceInstanceGUIDs []string
+	ServiceInstanceNames []string
+	ServicePlanGUIDs     []string
+	ServicePlanNames     []string
+	ServiceOfferingGUIDs []string
+	ServiceOfferingNames []string
+	Type                 string
 	LabelSelector        string
 }
 

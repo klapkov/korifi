@@ -44,8 +44,16 @@ func (r ServiceBindingRelationships) Validate() error {
 }
 
 type ServiceBindingList struct {
+	Names                string
 	AppGUIDs             string
+	AppNames             string
 	ServiceInstanceGUIDs string
+	ServiceInstanceNames string
+	ServicePlanGUIDs     string
+	ServicePlanNames     string
+	ServiceOfferingGUIDs string
+	ServiceOfferingNames string
+	Type                 string
 	Include              string
 	LabelSelector        string
 }
@@ -59,12 +67,34 @@ func (l *ServiceBindingList) ToMessage() repositories.ListServiceBindingsMessage
 }
 
 func (l *ServiceBindingList) SupportedKeys() []string {
-	return []string{"app_guids", "service_instance_guids", "include", "type", "per_page", "page", "label_selector"}
+	return []string{
+		"names",
+		"app_guids",
+		"app_names",
+		"service_instance_guids",
+		"service_instance_names",
+		"service_plan_guids",
+		"service_plan_names",
+		"service_offering_guids",
+		"service_offering_names",
+		"include",
+		"type",
+		"per_page",
+		"page",
+		"label_selector",
+	}
 }
 
 func (l *ServiceBindingList) DecodeFromURLValues(values url.Values) error {
 	l.AppGUIDs = values.Get("app_guids")
+	l.AppNames = values.Get("app_names")
 	l.ServiceInstanceGUIDs = values.Get("service_instance_guids")
+	l.ServiceInstanceNames = values.Get("service_instance_names")
+	l.ServicePlanGUIDs = values.Get("service_plan_guids")
+	l.ServicePlanNames = values.Get("service_plan_names")
+	l.ServiceOfferingGUIDs = values.Get("service_offering_guids")
+	l.ServiceOfferingNames = values.Get("service_offering_names")
+	l.Type = values.Get("type")
 	l.Include = values.Get("include")
 	l.LabelSelector = values.Get("label_selector")
 	return nil
