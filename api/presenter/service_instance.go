@@ -26,6 +26,7 @@ type ServiceInstanceResponse struct {
 	Relationships map[string]model.ToOneRelationship `json:"relationships"`
 	Metadata      Metadata                           `json:"metadata"`
 	Links         ServiceInstanceLinks               `json:"links"`
+	Included      map[string][]any                   `json:"included,omitempty"`
 }
 
 type lastOperation struct {

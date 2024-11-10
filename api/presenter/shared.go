@@ -82,11 +82,11 @@ func ForList[T, S any](itemPresenter itemPresenter[T, S], resources []T, baseURL
 			},
 		},
 		Resources: presenters,
-		Included:  includedResources(includes...),
+		Included:  IncludedResources(includes...),
 	}
 }
 
-func includedResources(includes ...model.IncludedResource) map[string][]any {
+func IncludedResources(includes ...model.IncludedResource) map[string][]any {
 	resources := map[string][]any{}
 	for _, include := range includes {
 		if resources[include.Type] == nil {
