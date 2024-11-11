@@ -38,6 +38,11 @@ type ServiceOfferingRepo struct {
 	brokerRepo        *ServiceBrokerRepo
 }
 
+type PatchServiceOfferingMessage struct {
+	GUID     string
+	Metadata MetadataPatch
+}
+
 type ListServiceOfferingMessage struct {
 	Names       []string
 	GUIDs       []string
@@ -77,6 +82,28 @@ func (r *ServiceOfferingRepo) GetServiceOffering(ctx context.Context, authInfo a
 
 	if err = userClient.Get(ctx, client.ObjectKeyFromObject(offering), offering); err != nil {
 		return ServiceOfferingRecord{}, fmt.Errorf("failed to get service offering: %s %w", guid, apierrors.FromK8sError(err, ServiceOfferingResourceType))
+	}
+
+	return offeringToRecord(*offering), nil
+}
+
+func (r *ServiceOfferingRepo) PatchServiceOffering(ctx context.Context, authInfo authorization.Info, message PatchServiceOfferingMessage) (ServiceOfferingRecord, error) {
+	userClient, err := r.userClientFactory.BuildClient(authInfo)
+	if err != nil {
+		return ServiceOfferingRecord{}, fmt.Errorf("failed to build user client: %w", err)
+	}
+
+	offering := &korifiv1alpha1.CFServiceOffering{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: r.rootNamespace,
+			Name:      message.GUID,
+		},
+	}
+
+	if err := PatchResource(ctx, userClient, offering, func() {
+		message.Metadata.Apply(offering)
+	}); err != nil {
+		return ServiceOfferingRecord{}, fmt.Errorf("failed to patch service offering: %s %w", message.GUID, apierrors.FromK8sError(err, ServiceOfferingResourceType))
 	}
 
 	return offeringToRecord(*offering), nil

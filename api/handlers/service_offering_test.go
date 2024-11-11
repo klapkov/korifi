@@ -4,7 +4,9 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strings"
 
+	apierrors "code.cloudfoundry.org/korifi/api/errors"
 	. "code.cloudfoundry.org/korifi/api/handlers"
 	"code.cloudfoundry.org/korifi/api/handlers/fake"
 	"code.cloudfoundry.org/korifi/api/payloads"
@@ -14,6 +16,7 @@ import (
 	"code.cloudfoundry.org/korifi/model"
 	"code.cloudfoundry.org/korifi/model/services"
 	. "code.cloudfoundry.org/korifi/tests/matchers"
+	"code.cloudfoundry.org/korifi/tools"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -123,6 +126,89 @@ var _ = Describe("ServiceOffering", func() {
 			})
 
 			It("returns an error", func() {
+				expectUnknownError()
+			})
+		})
+	})
+
+	Describe("PATCH /v3/service_offering/:guid", func() {
+		BeforeEach(func() {
+			serviceOfferingRepo.PatchServiceOfferingReturns(repositories.ServiceOfferingRecord{
+				ServiceOffering: services.ServiceOffering{},
+				CFResource: model.CFResource{
+					GUID: "offering-guid",
+				},
+				ServiceBrokerGUID: "broker-guid",
+			}, nil)
+
+			requestValidator.DecodeAndValidateJSONPayloadStub = decodeAndValidatePayloadStub(&payloads.ServiceOfferingPatch{
+				Metadata: payloads.MetadataPatch{
+					Annotations: map[string]*string{"ann2": tools.PtrTo("ann_val2")},
+					Labels:      map[string]*string{"lab2": tools.PtrTo("lab_val2")},
+				},
+			})
+		})
+
+		JustBeforeEach(func() {
+			req, err := http.NewRequestWithContext(ctx, "PATCH", "/v3/service_offerings/offering-guid", strings.NewReader("the-json-body"))
+			Expect(err).NotTo(HaveOccurred())
+			routerBuilder.Build().ServeHTTP(rr, req)
+		})
+
+		It("patches the service offering", func() {
+			Expect(requestValidator.DecodeAndValidateJSONPayloadCallCount()).To(Equal(1))
+
+			actualReq, _ := requestValidator.DecodeAndValidateJSONPayloadArgsForCall(0)
+			Expect(bodyString(actualReq)).To(Equal("the-json-body"))
+
+			Expect(serviceOfferingRepo.GetServiceOfferingCallCount()).To(Equal(1))
+			Expect(serviceOfferingRepo.PatchServiceOfferingCallCount()).To(Equal(1))
+			_, actualAuthInfo, actualPatchMessage := serviceOfferingRepo.PatchServiceOfferingArgsForCall(0)
+			Expect(actualAuthInfo).To(Equal(authInfo))
+			Expect(actualPatchMessage).To(Equal(repositories.PatchServiceOfferingMessage{
+				GUID: "offering-guid",
+				Metadata: repositories.MetadataPatch{
+					Annotations: map[string]*string{"ann2": tools.PtrTo("ann_val2")},
+					Labels:      map[string]*string{"lab2": tools.PtrTo("lab_val2")},
+				},
+			}))
+
+			Expect(rr).Should(HaveHTTPStatus(http.StatusOK))
+			Expect(rr).To(HaveHTTPHeaderWithValue("Content-Type", "application/json"))
+			Expect(rr).To(HaveHTTPBody(SatisfyAll(
+				MatchJSONPath("$.guid", "offering-guid"),
+			)))
+		})
+
+		When("decoding the payload fails", func() {
+			BeforeEach(func() {
+				requestValidator.DecodeAndValidateJSONPayloadReturns(apierrors.NewUnprocessableEntityError(nil, "nope"))
+			})
+
+			It("returns an error", func() {
+				expectUnprocessableEntityError("nope")
+			})
+		})
+
+		When("getting the service offering fails with not found", func() {
+			BeforeEach(func() {
+				serviceOfferingRepo.GetServiceOfferingReturns(
+					repositories.ServiceOfferingRecord{},
+					apierrors.NewNotFoundError(nil, repositories.ServiceOfferingResourceType),
+				)
+			})
+
+			It("returns 404 Not Found", func() {
+				expectNotFoundError(repositories.ServiceOfferingResourceType)
+			})
+		})
+
+		When("patching the service offering fails", func() {
+			BeforeEach(func() {
+				serviceOfferingRepo.PatchServiceOfferingReturns(repositories.ServiceOfferingRecord{}, errors.New("oops"))
+			})
+
+			It("returns the error", func() {
 				expectUnknownError()
 			})
 		})

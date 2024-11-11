@@ -47,6 +47,22 @@ func (l *ServiceOfferingGet) DecodeFromURLValues(values url.Values) error {
 	return nil
 }
 
+type ServiceOfferingPatch struct {
+	Metadata MetadataPatch `json:"metadata"`
+}
+
+func (p ServiceOfferingPatch) Validate() error {
+	return jellidation.ValidateStruct(&p,
+		jellidation.Field(&p.Metadata),
+	)
+}
+func (p ServiceOfferingPatch) ToMessage(guid string) repositories.PatchServiceOfferingMessage {
+	return repositories.PatchServiceOfferingMessage{
+		GUID:     guid,
+		Metadata: repositories.MetadataPatch(p.Metadata),
+	}
+}
+
 type ServiceOfferingList struct {
 	Names                string
 	BrokerNames          string

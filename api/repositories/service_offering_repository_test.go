@@ -19,6 +19,7 @@ import (
 
 var _ = Describe("ServiceOfferingRepo", func() {
 	var repo *repositories.ServiceOfferingRepo
+	var broker *korifiv1alpha1.CFServiceBroker
 
 	BeforeEach(func() {
 		repo = repositories.NewServiceOfferingRepo(
@@ -29,31 +30,30 @@ var _ = Describe("ServiceOfferingRepo", func() {
 				rootNamespace,
 			),
 		)
+
+		broker = &korifiv1alpha1.CFServiceBroker{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: rootNamespace,
+				Name:      uuid.NewString(),
+			},
+			Spec: korifiv1alpha1.CFServiceBrokerSpec{
+				ServiceBroker: services.ServiceBroker{
+					Name: uuid.NewString(),
+				},
+			},
+		}
+		Expect(k8sClient.Create(ctx, broker)).To(Succeed())
 	})
 
 	Describe("Get", func() {
 		var (
 			offeringGUID    string
-			broker          *korifiv1alpha1.CFServiceBroker
 			desiredOffering repositories.ServiceOfferingRecord
 			getErr          error
 		)
 
 		BeforeEach(func() {
 			offeringGUID = uuid.NewString()
-
-			broker = &korifiv1alpha1.CFServiceBroker{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: rootNamespace,
-					Name:      uuid.NewString(),
-				},
-				Spec: korifiv1alpha1.CFServiceBrokerSpec{
-					ServiceBroker: services.ServiceBroker{
-						Name: uuid.NewString(),
-					},
-				},
-			}
-			Expect(k8sClient.Create(ctx, broker)).To(Succeed())
 
 			Expect(k8sClient.Create(ctx, &korifiv1alpha1.CFServiceOffering{
 				ObjectMeta: metav1.ObjectMeta{
@@ -145,11 +145,130 @@ var _ = Describe("ServiceOfferingRepo", func() {
 		})
 	})
 
+	Describe("Patch", func() {
+		var (
+			offeringGUID    string
+			patchedOffering repositories.ServiceOfferingRecord
+			patchMessage    repositories.PatchServiceOfferingMessage
+			patchErr        error
+		)
+
+		BeforeEach(func() {
+			offeringGUID = uuid.NewString()
+
+			Expect(k8sClient.Create(ctx, &korifiv1alpha1.CFServiceOffering{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: rootNamespace,
+					Name:      offeringGUID,
+					Labels: map[string]string{
+						korifiv1alpha1.RelServiceBrokerGUIDLabel: broker.Name,
+						korifiv1alpha1.RelServiceBrokerNameLabel: broker.Spec.Name,
+					},
+					Annotations: map[string]string{
+						"annotation": "annotation-value",
+					},
+				},
+			})).To(Succeed())
+		})
+
+		JustBeforeEach(func() {
+			patchedOffering, patchErr = repo.PatchServiceOffering(ctx, authInfo, patchMessage)
+		})
+
+		When("metadata patch is valid", func() {
+			BeforeEach(func() {
+				patchMessage = repositories.PatchServiceOfferingMessage{
+					GUID: offeringGUID,
+					Metadata: repositories.MetadataPatch{
+						Labels: map[string]*string{
+							"new-label1": tools.PtrTo("new-label1-value"),
+							"new-label2": tools.PtrTo("new-label2-value"),
+						},
+						Annotations: map[string]*string{
+							"new-annotation": tools.PtrTo("new-annotation-value"),
+						},
+					},
+				}
+			})
+
+			It("patches the service offering successfully", func() {
+				Expect(patchErr).ToNot(HaveOccurred())
+				Expect(patchedOffering).To(
+					MatchFields(IgnoreExtras, Fields{
+						"CFResource": MatchFields(IgnoreExtras, Fields{
+							"GUID":      Equal(offeringGUID),
+							"CreatedAt": Not(BeZero()),
+							"UpdatedAt": BeNil(),
+							"Metadata": MatchAllFields(Fields{
+								"Labels": MatchAllKeys(Keys{
+									korifiv1alpha1.RelServiceBrokerGUIDLabel: Equal(broker.Name),
+									korifiv1alpha1.RelServiceBrokerNameLabel: Equal(broker.Spec.Name),
+									"new-label1":                             Equal("new-label1-value"),
+									"new-label2":                             Equal("new-label2-value"),
+								}),
+								"Annotations": MatchAllKeys(Keys{
+									"annotation":     Equal("annotation-value"),
+									"new-annotation": Equal("new-annotation-value"),
+								}),
+							}),
+						}),
+					}),
+				)
+			})
+		})
+
+		When("an label is invalid", func() {
+			BeforeEach(func() {
+				patchMessage = repositories.PatchServiceOfferingMessage{
+					GUID: offeringGUID,
+					Metadata: repositories.MetadataPatch{
+						Labels: map[string]*string{
+							"-bad-label": tools.PtrTo("stuff"),
+						},
+					},
+				}
+			})
+
+			It("returns an UnprocessableEntityError", func() {
+				var unprocessableEntityError apierrors.UnprocessableEntityError
+				Expect(errors.As(patchErr, &unprocessableEntityError)).To(BeTrue())
+				Expect(unprocessableEntityError.Detail()).To(SatisfyAll(
+					ContainSubstring("metadata.labels is invalid"),
+					ContainSubstring(`"-bad-label"`),
+					ContainSubstring("alphanumeric"),
+				))
+			})
+		})
+
+		When("an annotation is invalid", func() {
+			BeforeEach(func() {
+				patchMessage = repositories.PatchServiceOfferingMessage{
+					GUID: offeringGUID,
+					Metadata: repositories.MetadataPatch{
+						Annotations: map[string]*string{
+							"-bad-annotation": tools.PtrTo("stuff"),
+						},
+					},
+				}
+			})
+
+			It("returns an UnprocessableEntityError", func() {
+				var unprocessableEntityError apierrors.UnprocessableEntityError
+				Expect(errors.As(patchErr, &unprocessableEntityError)).To(BeTrue())
+				Expect(unprocessableEntityError.Detail()).To(SatisfyAll(
+					ContainSubstring("metadata.annotations is invalid"),
+					ContainSubstring(`"-bad-annotation"`),
+					ContainSubstring("alphanumeric"),
+				))
+			})
+		})
+
+	})
+
 	Describe("List", func() {
 		var (
 			offeringGUID        string
 			anotherOfferingGUID string
-			broker              *korifiv1alpha1.CFServiceBroker
 			listedOfferings     []repositories.ServiceOfferingRecord
 			message             repositories.ListServiceOfferingMessage
 			listErr             error
@@ -158,19 +277,6 @@ var _ = Describe("ServiceOfferingRepo", func() {
 		BeforeEach(func() {
 			offeringGUID = uuid.NewString()
 			anotherOfferingGUID = uuid.NewString()
-
-			broker = &korifiv1alpha1.CFServiceBroker{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: rootNamespace,
-					Name:      uuid.NewString(),
-				},
-				Spec: korifiv1alpha1.CFServiceBrokerSpec{
-					ServiceBroker: services.ServiceBroker{
-						Name: uuid.NewString(),
-					},
-				},
-			}
-			Expect(k8sClient.Create(ctx, broker)).To(Succeed())
 
 			Expect(k8sClient.Create(ctx, &korifiv1alpha1.CFServiceOffering{
 				ObjectMeta: metav1.ObjectMeta{
