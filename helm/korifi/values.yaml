@@ -21,7 +21,7 @@ stagingRequirements:
 
 api:
   include: true
-
+  uaaURL: ""
   image: cloudfoundry/korifi-api:latest
 
   nodeSelector: {}

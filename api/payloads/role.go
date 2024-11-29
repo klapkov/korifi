@@ -73,6 +73,14 @@ func (p RoleCreate) ToMessage() repositories.CreateRoleMessage {
 
 		record.Kind = rbacv1.ServiceAccountKind
 		record.User = user
+		// For UAA Authenticated users, prefix the Origin as our Cluster uses the Orgin:User for
+		// Authentication verification (via OIDC prefixs)
+		// --kube-apiserver-arg oidc-username-prefix="<origin>:"
+		// --kube-apiserver-arg oidc-groups-prefix="<origin>:"
+		if p.Relationships.User.Data.Origin != "" {
+			record.User = p.Relationships.User.Data.Origin + ":" + record.User
+		}
+
 		record.ServiceAccountNamespace = namespace
 	}
 
@@ -118,6 +126,7 @@ type UserRelationship struct {
 type UserRelationshipData struct {
 	Username string `json:"username"`
 	GUID     string `json:"guid"`
+	Origin   string `json:"origin"`
 }
 
 type RoleList struct {

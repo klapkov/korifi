@@ -22,12 +22,14 @@ import (
 
 const (
 	defaultServerURL = "https://api.example.org"
+	defaultUaaURL    = "https://uaa.example.org"
 )
 
 var (
 	rr            *httptest.ResponseRecorder
 	routerBuilder *routing.RouterBuilder
 	serverURL     *url.URL
+	uaaURL        *url.URL
 	ctx           context.Context
 	authInfo      authorization.Info
 )
@@ -49,6 +51,8 @@ var _ = BeforeEach(func() {
 
 	var err error
 	serverURL, err = url.Parse(defaultServerURL)
+	Expect(err).NotTo(HaveOccurred())
+	uaaURL, err = url.Parse(defaultUaaURL)
 	Expect(err).NotTo(HaveOccurred())
 })
 

@@ -123,6 +123,11 @@ func main() {
 		panic(fmt.Sprintf("could not parse server URL: %v", err))
 	}
 
+	uaaURL, err := url.Parse(cfg.UaaURL)
+	if err != nil {
+		panic(fmt.Sprintf("could not parse UAA URL: %v", err))
+	}
+
 	orgRepo := repositories.NewOrgRepo(
 		cfg.RootNamespace,
 		privilegedCRClient,
@@ -292,7 +297,7 @@ func main() {
 
 	apiHandlers := []routing.Routable{
 		handlers.NewRootV3(*serverURL),
-		handlers.NewRoot(*serverURL),
+		handlers.NewRoot(*serverURL, *uaaURL),
 		handlers.NewInfoV3(
 			*serverURL,
 			cfg.InfoConfig,

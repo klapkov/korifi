@@ -28,8 +28,8 @@ type (
 		ExternalFQDN string `yaml:"externalFQDN"`
 		ExternalPort int    `yaml:"externalPort"`
 
-		ServerURL string
-
+		ServerURL  string
+		UaaURL     string     `yaml:"uaaURL"`
 		InfoConfig InfoConfig `yaml:"infoConfig"`
 
 		RootNamespace                            string                 `yaml:"rootNamespace"`

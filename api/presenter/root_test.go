@@ -13,6 +13,7 @@ import (
 var _ = Describe("Root endpoints", func() {
 	var (
 		baseURL *url.URL
+		uaaURL  *url.URL
 		output  []byte
 	)
 
@@ -20,11 +21,13 @@ var _ = Describe("Root endpoints", func() {
 		var err error
 		baseURL, err = url.Parse("https://api.example.org")
 		Expect(err).NotTo(HaveOccurred())
+		uaaURL, err = url.Parse("https://uaa.example.org")
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Context("/", func() {
 		JustBeforeEach(func() {
-			response := presenter.ForRoot(*baseURL)
+			response := presenter.ForRoot(*baseURL, *uaaURL)
 			var err error
 			output, err = json.Marshal(response)
 			Expect(err).NotTo(HaveOccurred())
