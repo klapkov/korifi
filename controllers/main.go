@@ -29,6 +29,7 @@ import (
 	"code.cloudfoundry.org/korifi/controllers/config"
 	"code.cloudfoundry.org/korifi/controllers/controllers/networking/domains"
 	"code.cloudfoundry.org/korifi/controllers/controllers/networking/routes"
+	securitygroups "code.cloudfoundry.org/korifi/controllers/controllers/networking/security_groups"
 	"code.cloudfoundry.org/korifi/controllers/controllers/services/bindings"
 	managed_bindings "code.cloudfoundry.org/korifi/controllers/controllers/services/bindings/managed"
 	upsi_bindings "code.cloudfoundry.org/korifi/controllers/controllers/services/bindings/upsi"
@@ -192,6 +193,17 @@ func main() {
 			env.NewAppEnvBuilder(controllersClient),
 		).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "CFBuildpackBuild")
+			os.Exit(1)
+		}
+
+		if err = securitygroups.NewReconciler(
+			mgr.GetClient(),
+			k8sClient,
+			mgr.GetScheme(),
+			controllersLog,
+			controllerConfig.CFRootNamespace,
+		).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "CFSecurityGroup")
 			os.Exit(1)
 		}
 
@@ -409,6 +421,14 @@ func main() {
 			uncachedClient,
 		).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "CFRoute")
+			os.Exit(1)
+		}
+
+		if err = securitygroupswebhook.NewValidator(
+			validation.NewDuplicateValidator(coordination.NewNameRegistry(uncachedClient, securitygroupswebhook.SecurityGroupEntityType)),
+			controllerConfig.CFRootNamespace,
+		).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "CFSecurityGroup")
 			os.Exit(1)
 		}
 

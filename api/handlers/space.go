@@ -20,6 +20,8 @@ import (
 const (
 	SpacesPath         = "/v3/spaces"
 	SpacePath          = "/v3/spaces/{guid}"
+	StagingSGSpacePath = "/v3/spaces/{guid}/staging_security_groups"
+	RunningSGSpacePath = "/v3/spaces/{guid}/running_security_groups"
 	RoutesForSpacePath = "/v3/spaces/{guid}/routes"
 )
 
@@ -32,6 +34,8 @@ type CFSpaceRepository interface {
 	DeleteSpace(context.Context, authorization.Info, repositories.DeleteSpaceMessage) error
 	PatchSpaceMetadata(context.Context, authorization.Info, repositories.PatchSpaceMetadataMessage) (repositories.SpaceRecord, error)
 	GetDeletedAt(context.Context, authorization.Info, string) (*time.Time, error)
+	ListRunningSecurityGroups(context.Context, authorization.Info, string) ([]repositories.SecurityGroupRecord, error)
+	ListStagingSecurityGroups(context.Context, authorization.Info, string) ([]repositories.SecurityGroupRecord, error)
 }
 
 type Space struct {
@@ -197,6 +201,44 @@ func (h *Space) deleteUnmappedRoutes(r *http.Request) (*routing.Response, error)
 	return routing.NewResponse(http.StatusAccepted).WithHeader("Location", presenter.JobURLForRedirects(spaceGUID, presenter.SpaceDeleteUnmappedRoutesOperation, h.apiBaseURL)), nil
 }
 
+func (h *Space) listRunningSecurityGroups(r *http.Request) (*routing.Response, error) {
+	authInfo, _ := authorization.InfoFromContext(r.Context())
+	logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.space.list-running-security-groups")
+
+	spaceGUID := routing.URLParam(r, "guid")
+
+	_, err := h.spaceRepo.GetSpace(r.Context(), authInfo, spaceGUID)
+	if err != nil {
+		return nil, apierrors.LogAndReturn(logger, apierrors.ForbiddenAsNotFound(err), "Failed to fetch space", "spaceGUID", spaceGUID)
+	}
+
+	securityGroups, err := h.spaceRepo.ListRunningSecurityGroups(r.Context(), authInfo, spaceGUID)
+	if err != nil {
+		return nil, apierrors.LogAndReturn(logger, apierrors.ForbiddenAsNotFound(err), "Failed to running security groups for space", "spaceGUID", spaceGUID)
+	}
+
+	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForList(presenter.ForSecurityGroup, securityGroups, h.apiBaseURL, *r.URL)), nil
+}
+
+func (h *Space) listStagingSecurityGroups(r *http.Request) (*routing.Response, error) {
+	authInfo, _ := authorization.InfoFromContext(r.Context())
+	logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.space.list-staging-security-groups")
+
+	spaceGUID := routing.URLParam(r, "guid")
+
+	_, err := h.spaceRepo.GetSpace(r.Context(), authInfo, spaceGUID)
+	if err != nil {
+		return nil, apierrors.LogAndReturn(logger, apierrors.ForbiddenAsNotFound(err), "Failed to fetch space", "spaceGUID", spaceGUID)
+	}
+
+	securityGroups, err := h.spaceRepo.ListStagingSecurityGroups(r.Context(), authInfo, spaceGUID)
+	if err != nil {
+		return nil, apierrors.LogAndReturn(logger, apierrors.ForbiddenAsNotFound(err), "Failed to staging security groups for space", "spaceGUID", spaceGUID)
+	}
+
+	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForList(presenter.ForSecurityGroup, securityGroups, h.apiBaseURL, *r.URL)), nil
+}
+
 func (h *Space) UnauthenticatedRoutes() []routing.Route {
 	return nil
 }
@@ -208,6 +250,8 @@ func (h *Space) AuthenticatedRoutes() []routing.Route {
 		{Method: "PATCH", Pattern: SpacePath, Handler: h.update},
 		{Method: "DELETE", Pattern: SpacePath, Handler: h.delete},
 		{Method: "GET", Pattern: SpacePath, Handler: h.get},
+		{Method: "GET", Pattern: StagingSGSpacePath, Handler: h.listStagingSecurityGroups},
+		{Method: "GET", Pattern: RunningSGSpacePath, Handler: h.listRunningSecurityGroups},
 		{Method: "DELETE", Pattern: RoutesForSpacePath, Handler: h.deleteUnmappedRoutes},
 	}
 }
