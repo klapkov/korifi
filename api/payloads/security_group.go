@@ -1,9 +1,13 @@
 package payloads
 
 import (
+	"fmt"
+	"net/url"
 	"slices"
 
+	"code.cloudfoundry.org/korifi/api/payloads/parse"
 	"code.cloudfoundry.org/korifi/api/repositories"
+	korifiv1alpha1 "code.cloudfoundry.org/korifi/controllers/api/v1alpha1"
 	"github.com/BooleanCat/go-functional/v2/it"
 	jellidation "github.com/jellydator/validation"
 )
@@ -79,5 +83,103 @@ func (c SecurityGroupCreate) ToMessage() repositories.CreateSecurityGroupMessage
 			Staging: c.GloballyEnabled.Staging,
 		},
 		Spaces: spaces,
+	}
+}
+
+type SecurityGroupList struct {
+	GUIDs                  string `json:"guids"`
+	Names                  string `json:"names"`
+	GloballyEnabledRunning *bool  `json:"globally_enabled_running"`
+	GloballyEnabledStaging *bool  `json:"globally_enabled_staging"`
+	RunningSpaceGUIDs      string `json:"running_space_guids"`
+	StagingSpaceGUIDs      string `json:"staging_space_guids"`
+}
+
+func (l SecurityGroupList) SupportedKeys() []string {
+	return []string{
+		"guids",
+		"names",
+		"globally_enabled_staging",
+		"globally_enabled_running",
+		"running_space_guids",
+		"staging_space_guids",
+		"per_page",
+		"page",
+		"order_by",
+		"created_ats",
+		"updated_ats",
+	}
+}
+
+func (l *SecurityGroupList) DecodeFromURLValues(values url.Values) error {
+	var err error
+
+	l.GUIDs = values.Get("guids")
+	l.Names = values.Get("names")
+	globallyEnabledStaging, err := parseBool(values.Get("globally_enabled_staging"))
+	if err != nil {
+		return fmt.Errorf("failed to parse 'globally_enabled_staging' query parameter: %w", err)
+	}
+	globallyEnabledRunning, err := parseBool(values.Get("globally_enabled_running"))
+	if err != nil {
+		return fmt.Errorf("failed to parse 'globally_enabled_running' query parameter: %w", err)
+	}
+	l.GloballyEnabledStaging = globallyEnabledStaging
+	l.GloballyEnabledRunning = globallyEnabledRunning
+	l.RunningSpaceGUIDs = values.Get("running_space_guids")
+	l.StagingSpaceGUIDs = values.Get("staging_space_guids")
+
+	return nil
+}
+
+func (l SecurityGroupList) ToMessage() repositories.ListSecurityGroupMessage {
+	return repositories.ListSecurityGroupMessage{
+		GUIDs:                  parse.ArrayParam(l.GUIDs),
+		Names:                  parse.ArrayParam(l.Names),
+		GloballyEnabledStaging: l.GloballyEnabledStaging,
+		GloballyEnabledRunning: l.GloballyEnabledRunning,
+		RunningSpaceGUIDs:      parse.ArrayParam(l.RunningSpaceGUIDs),
+		StagingSpaceGUIDs:      parse.ArrayParam(l.StagingSpaceGUIDs),
+	}
+}
+
+type SecurityGroupUpdate struct {
+	DisplayName     string                                      `json:"name"`
+	GloballyEnabled korifiv1alpha1.SecurityGroupWorkloadsUpdate `json:"globally_enabled"`
+	Rules           []korifiv1alpha1.SecurityGroupRule          `json:"rules"`
+}
+
+func (u SecurityGroupUpdate) Validate() error {
+	return jellidation.ValidateStruct(&u,
+		jellidation.Field(&u.Rules, jellidation.Required),
+	)
+}
+
+func (u SecurityGroupUpdate) ToMessage(guid string) repositories.UpdateSecurityGroupMessage {
+	return repositories.UpdateSecurityGroupMessage{
+		GUID:            guid,
+		DisplayName:     u.DisplayName,
+		GloballyEnabled: u.GloballyEnabled,
+		Rules:           u.Rules,
+	}
+}
+
+type SecurityGroupBind struct {
+	Data []RelationshipData `json:"data"`
+}
+
+func (b SecurityGroupBind) Validate() error {
+	return jellidation.ValidateStruct(&b,
+		jellidation.Field(&b.Data, jellidation.Required),
+	)
+}
+
+func (b SecurityGroupBind) ToMessage(workload, guid string) repositories.BindSecurityGroupMessage {
+	return repositories.BindSecurityGroupMessage{
+		GUID: guid,
+		Spaces: slices.Collect(it.Map(slices.Values(b.Data), func(v RelationshipData) string {
+			return v.GUID
+		})),
+		Workload: workload,
 	}
 }

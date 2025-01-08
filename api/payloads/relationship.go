@@ -14,6 +14,10 @@ func (r Relationship) Validate() error {
 	)
 }
 
+type ToManyRelationship struct {
+	Data []RelationshipData `json:"data"`
+}
+
 type RelationshipData struct {
 	GUID string `json:"guid"`
 }
@@ -22,8 +26,4 @@ func (r RelationshipData) Validate() error {
 	return validation.ValidateStruct(&r,
 		validation.Field(&r.GUID, validation.Required),
 	)
-}
-
-type ToManyRelationship struct {
-	Data []RelationshipData `json:"data"`
 }

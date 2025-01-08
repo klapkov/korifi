@@ -11,6 +11,21 @@ import (
 )
 
 type CFSecurityGroupRepository struct {
+	BindSecurityGroupStub        func(context.Context, authorization.Info, repositories.BindSecurityGroupMessage) (repositories.SecurityGroupRecord, error)
+	bindSecurityGroupMutex       sync.RWMutex
+	bindSecurityGroupArgsForCall []struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 repositories.BindSecurityGroupMessage
+	}
+	bindSecurityGroupReturns struct {
+		result1 repositories.SecurityGroupRecord
+		result2 error
+	}
+	bindSecurityGroupReturnsOnCall map[int]struct {
+		result1 repositories.SecurityGroupRecord
+		result2 error
+	}
 	CreateSecurityGroupStub        func(context.Context, authorization.Info, repositories.CreateSecurityGroupMessage) (repositories.SecurityGroupRecord, error)
 	createSecurityGroupMutex       sync.RWMutex
 	createSecurityGroupArgsForCall []struct {
@@ -26,8 +41,158 @@ type CFSecurityGroupRepository struct {
 		result1 repositories.SecurityGroupRecord
 		result2 error
 	}
+	DeleteSecurityGroupStub        func(context.Context, authorization.Info, string) error
+	deleteSecurityGroupMutex       sync.RWMutex
+	deleteSecurityGroupArgsForCall []struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 string
+	}
+	deleteSecurityGroupReturns struct {
+		result1 error
+	}
+	deleteSecurityGroupReturnsOnCall map[int]struct {
+		result1 error
+	}
+	GetSecurityGroupStub        func(context.Context, authorization.Info, string) (repositories.SecurityGroupRecord, error)
+	getSecurityGroupMutex       sync.RWMutex
+	getSecurityGroupArgsForCall []struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 string
+	}
+	getSecurityGroupReturns struct {
+		result1 repositories.SecurityGroupRecord
+		result2 error
+	}
+	getSecurityGroupReturnsOnCall map[int]struct {
+		result1 repositories.SecurityGroupRecord
+		result2 error
+	}
+	ListSecurityGroupsStub        func(context.Context, authorization.Info, repositories.ListSecurityGroupMessage) ([]repositories.SecurityGroupRecord, error)
+	listSecurityGroupsMutex       sync.RWMutex
+	listSecurityGroupsArgsForCall []struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 repositories.ListSecurityGroupMessage
+	}
+	listSecurityGroupsReturns struct {
+		result1 []repositories.SecurityGroupRecord
+		result2 error
+	}
+	listSecurityGroupsReturnsOnCall map[int]struct {
+		result1 []repositories.SecurityGroupRecord
+		result2 error
+	}
+	UnbindRunningSecurityGroupStub        func(context.Context, authorization.Info, repositories.UnbindRunningSecurityGroupMessage) error
+	unbindRunningSecurityGroupMutex       sync.RWMutex
+	unbindRunningSecurityGroupArgsForCall []struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 repositories.UnbindRunningSecurityGroupMessage
+	}
+	unbindRunningSecurityGroupReturns struct {
+		result1 error
+	}
+	unbindRunningSecurityGroupReturnsOnCall map[int]struct {
+		result1 error
+	}
+	UnbindStagingSecurityGroupStub        func(context.Context, authorization.Info, repositories.UnbindStagingSecurityGroupMessage) error
+	unbindStagingSecurityGroupMutex       sync.RWMutex
+	unbindStagingSecurityGroupArgsForCall []struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 repositories.UnbindStagingSecurityGroupMessage
+	}
+	unbindStagingSecurityGroupReturns struct {
+		result1 error
+	}
+	unbindStagingSecurityGroupReturnsOnCall map[int]struct {
+		result1 error
+	}
+	UpdateSecurityGroupStub        func(context.Context, authorization.Info, repositories.UpdateSecurityGroupMessage) (repositories.SecurityGroupRecord, error)
+	updateSecurityGroupMutex       sync.RWMutex
+	updateSecurityGroupArgsForCall []struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 repositories.UpdateSecurityGroupMessage
+	}
+	updateSecurityGroupReturns struct {
+		result1 repositories.SecurityGroupRecord
+		result2 error
+	}
+	updateSecurityGroupReturnsOnCall map[int]struct {
+		result1 repositories.SecurityGroupRecord
+		result2 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *CFSecurityGroupRepository) BindSecurityGroup(arg1 context.Context, arg2 authorization.Info, arg3 repositories.BindSecurityGroupMessage) (repositories.SecurityGroupRecord, error) {
+	fake.bindSecurityGroupMutex.Lock()
+	ret, specificReturn := fake.bindSecurityGroupReturnsOnCall[len(fake.bindSecurityGroupArgsForCall)]
+	fake.bindSecurityGroupArgsForCall = append(fake.bindSecurityGroupArgsForCall, struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 repositories.BindSecurityGroupMessage
+	}{arg1, arg2, arg3})
+	stub := fake.BindSecurityGroupStub
+	fakeReturns := fake.bindSecurityGroupReturns
+	fake.recordInvocation("BindSecurityGroup", []interface{}{arg1, arg2, arg3})
+	fake.bindSecurityGroupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *CFSecurityGroupRepository) BindSecurityGroupCallCount() int {
+	fake.bindSecurityGroupMutex.RLock()
+	defer fake.bindSecurityGroupMutex.RUnlock()
+	return len(fake.bindSecurityGroupArgsForCall)
+}
+
+func (fake *CFSecurityGroupRepository) BindSecurityGroupCalls(stub func(context.Context, authorization.Info, repositories.BindSecurityGroupMessage) (repositories.SecurityGroupRecord, error)) {
+	fake.bindSecurityGroupMutex.Lock()
+	defer fake.bindSecurityGroupMutex.Unlock()
+	fake.BindSecurityGroupStub = stub
+}
+
+func (fake *CFSecurityGroupRepository) BindSecurityGroupArgsForCall(i int) (context.Context, authorization.Info, repositories.BindSecurityGroupMessage) {
+	fake.bindSecurityGroupMutex.RLock()
+	defer fake.bindSecurityGroupMutex.RUnlock()
+	argsForCall := fake.bindSecurityGroupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *CFSecurityGroupRepository) BindSecurityGroupReturns(result1 repositories.SecurityGroupRecord, result2 error) {
+	fake.bindSecurityGroupMutex.Lock()
+	defer fake.bindSecurityGroupMutex.Unlock()
+	fake.BindSecurityGroupStub = nil
+	fake.bindSecurityGroupReturns = struct {
+		result1 repositories.SecurityGroupRecord
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *CFSecurityGroupRepository) BindSecurityGroupReturnsOnCall(i int, result1 repositories.SecurityGroupRecord, result2 error) {
+	fake.bindSecurityGroupMutex.Lock()
+	defer fake.bindSecurityGroupMutex.Unlock()
+	fake.BindSecurityGroupStub = nil
+	if fake.bindSecurityGroupReturnsOnCall == nil {
+		fake.bindSecurityGroupReturnsOnCall = make(map[int]struct {
+			result1 repositories.SecurityGroupRecord
+			result2 error
+		})
+	}
+	fake.bindSecurityGroupReturnsOnCall[i] = struct {
+		result1 repositories.SecurityGroupRecord
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *CFSecurityGroupRepository) CreateSecurityGroup(arg1 context.Context, arg2 authorization.Info, arg3 repositories.CreateSecurityGroupMessage) (repositories.SecurityGroupRecord, error) {
@@ -96,11 +261,412 @@ func (fake *CFSecurityGroupRepository) CreateSecurityGroupReturnsOnCall(i int, r
 	}{result1, result2}
 }
 
+func (fake *CFSecurityGroupRepository) DeleteSecurityGroup(arg1 context.Context, arg2 authorization.Info, arg3 string) error {
+	fake.deleteSecurityGroupMutex.Lock()
+	ret, specificReturn := fake.deleteSecurityGroupReturnsOnCall[len(fake.deleteSecurityGroupArgsForCall)]
+	fake.deleteSecurityGroupArgsForCall = append(fake.deleteSecurityGroupArgsForCall, struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 string
+	}{arg1, arg2, arg3})
+	stub := fake.DeleteSecurityGroupStub
+	fakeReturns := fake.deleteSecurityGroupReturns
+	fake.recordInvocation("DeleteSecurityGroup", []interface{}{arg1, arg2, arg3})
+	fake.deleteSecurityGroupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *CFSecurityGroupRepository) DeleteSecurityGroupCallCount() int {
+	fake.deleteSecurityGroupMutex.RLock()
+	defer fake.deleteSecurityGroupMutex.RUnlock()
+	return len(fake.deleteSecurityGroupArgsForCall)
+}
+
+func (fake *CFSecurityGroupRepository) DeleteSecurityGroupCalls(stub func(context.Context, authorization.Info, string) error) {
+	fake.deleteSecurityGroupMutex.Lock()
+	defer fake.deleteSecurityGroupMutex.Unlock()
+	fake.DeleteSecurityGroupStub = stub
+}
+
+func (fake *CFSecurityGroupRepository) DeleteSecurityGroupArgsForCall(i int) (context.Context, authorization.Info, string) {
+	fake.deleteSecurityGroupMutex.RLock()
+	defer fake.deleteSecurityGroupMutex.RUnlock()
+	argsForCall := fake.deleteSecurityGroupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *CFSecurityGroupRepository) DeleteSecurityGroupReturns(result1 error) {
+	fake.deleteSecurityGroupMutex.Lock()
+	defer fake.deleteSecurityGroupMutex.Unlock()
+	fake.DeleteSecurityGroupStub = nil
+	fake.deleteSecurityGroupReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *CFSecurityGroupRepository) DeleteSecurityGroupReturnsOnCall(i int, result1 error) {
+	fake.deleteSecurityGroupMutex.Lock()
+	defer fake.deleteSecurityGroupMutex.Unlock()
+	fake.DeleteSecurityGroupStub = nil
+	if fake.deleteSecurityGroupReturnsOnCall == nil {
+		fake.deleteSecurityGroupReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.deleteSecurityGroupReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *CFSecurityGroupRepository) GetSecurityGroup(arg1 context.Context, arg2 authorization.Info, arg3 string) (repositories.SecurityGroupRecord, error) {
+	fake.getSecurityGroupMutex.Lock()
+	ret, specificReturn := fake.getSecurityGroupReturnsOnCall[len(fake.getSecurityGroupArgsForCall)]
+	fake.getSecurityGroupArgsForCall = append(fake.getSecurityGroupArgsForCall, struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 string
+	}{arg1, arg2, arg3})
+	stub := fake.GetSecurityGroupStub
+	fakeReturns := fake.getSecurityGroupReturns
+	fake.recordInvocation("GetSecurityGroup", []interface{}{arg1, arg2, arg3})
+	fake.getSecurityGroupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *CFSecurityGroupRepository) GetSecurityGroupCallCount() int {
+	fake.getSecurityGroupMutex.RLock()
+	defer fake.getSecurityGroupMutex.RUnlock()
+	return len(fake.getSecurityGroupArgsForCall)
+}
+
+func (fake *CFSecurityGroupRepository) GetSecurityGroupCalls(stub func(context.Context, authorization.Info, string) (repositories.SecurityGroupRecord, error)) {
+	fake.getSecurityGroupMutex.Lock()
+	defer fake.getSecurityGroupMutex.Unlock()
+	fake.GetSecurityGroupStub = stub
+}
+
+func (fake *CFSecurityGroupRepository) GetSecurityGroupArgsForCall(i int) (context.Context, authorization.Info, string) {
+	fake.getSecurityGroupMutex.RLock()
+	defer fake.getSecurityGroupMutex.RUnlock()
+	argsForCall := fake.getSecurityGroupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *CFSecurityGroupRepository) GetSecurityGroupReturns(result1 repositories.SecurityGroupRecord, result2 error) {
+	fake.getSecurityGroupMutex.Lock()
+	defer fake.getSecurityGroupMutex.Unlock()
+	fake.GetSecurityGroupStub = nil
+	fake.getSecurityGroupReturns = struct {
+		result1 repositories.SecurityGroupRecord
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *CFSecurityGroupRepository) GetSecurityGroupReturnsOnCall(i int, result1 repositories.SecurityGroupRecord, result2 error) {
+	fake.getSecurityGroupMutex.Lock()
+	defer fake.getSecurityGroupMutex.Unlock()
+	fake.GetSecurityGroupStub = nil
+	if fake.getSecurityGroupReturnsOnCall == nil {
+		fake.getSecurityGroupReturnsOnCall = make(map[int]struct {
+			result1 repositories.SecurityGroupRecord
+			result2 error
+		})
+	}
+	fake.getSecurityGroupReturnsOnCall[i] = struct {
+		result1 repositories.SecurityGroupRecord
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *CFSecurityGroupRepository) ListSecurityGroups(arg1 context.Context, arg2 authorization.Info, arg3 repositories.ListSecurityGroupMessage) ([]repositories.SecurityGroupRecord, error) {
+	fake.listSecurityGroupsMutex.Lock()
+	ret, specificReturn := fake.listSecurityGroupsReturnsOnCall[len(fake.listSecurityGroupsArgsForCall)]
+	fake.listSecurityGroupsArgsForCall = append(fake.listSecurityGroupsArgsForCall, struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 repositories.ListSecurityGroupMessage
+	}{arg1, arg2, arg3})
+	stub := fake.ListSecurityGroupsStub
+	fakeReturns := fake.listSecurityGroupsReturns
+	fake.recordInvocation("ListSecurityGroups", []interface{}{arg1, arg2, arg3})
+	fake.listSecurityGroupsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *CFSecurityGroupRepository) ListSecurityGroupsCallCount() int {
+	fake.listSecurityGroupsMutex.RLock()
+	defer fake.listSecurityGroupsMutex.RUnlock()
+	return len(fake.listSecurityGroupsArgsForCall)
+}
+
+func (fake *CFSecurityGroupRepository) ListSecurityGroupsCalls(stub func(context.Context, authorization.Info, repositories.ListSecurityGroupMessage) ([]repositories.SecurityGroupRecord, error)) {
+	fake.listSecurityGroupsMutex.Lock()
+	defer fake.listSecurityGroupsMutex.Unlock()
+	fake.ListSecurityGroupsStub = stub
+}
+
+func (fake *CFSecurityGroupRepository) ListSecurityGroupsArgsForCall(i int) (context.Context, authorization.Info, repositories.ListSecurityGroupMessage) {
+	fake.listSecurityGroupsMutex.RLock()
+	defer fake.listSecurityGroupsMutex.RUnlock()
+	argsForCall := fake.listSecurityGroupsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *CFSecurityGroupRepository) ListSecurityGroupsReturns(result1 []repositories.SecurityGroupRecord, result2 error) {
+	fake.listSecurityGroupsMutex.Lock()
+	defer fake.listSecurityGroupsMutex.Unlock()
+	fake.ListSecurityGroupsStub = nil
+	fake.listSecurityGroupsReturns = struct {
+		result1 []repositories.SecurityGroupRecord
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *CFSecurityGroupRepository) ListSecurityGroupsReturnsOnCall(i int, result1 []repositories.SecurityGroupRecord, result2 error) {
+	fake.listSecurityGroupsMutex.Lock()
+	defer fake.listSecurityGroupsMutex.Unlock()
+	fake.ListSecurityGroupsStub = nil
+	if fake.listSecurityGroupsReturnsOnCall == nil {
+		fake.listSecurityGroupsReturnsOnCall = make(map[int]struct {
+			result1 []repositories.SecurityGroupRecord
+			result2 error
+		})
+	}
+	fake.listSecurityGroupsReturnsOnCall[i] = struct {
+		result1 []repositories.SecurityGroupRecord
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *CFSecurityGroupRepository) UnbindRunningSecurityGroup(arg1 context.Context, arg2 authorization.Info, arg3 repositories.UnbindRunningSecurityGroupMessage) error {
+	fake.unbindRunningSecurityGroupMutex.Lock()
+	ret, specificReturn := fake.unbindRunningSecurityGroupReturnsOnCall[len(fake.unbindRunningSecurityGroupArgsForCall)]
+	fake.unbindRunningSecurityGroupArgsForCall = append(fake.unbindRunningSecurityGroupArgsForCall, struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 repositories.UnbindRunningSecurityGroupMessage
+	}{arg1, arg2, arg3})
+	stub := fake.UnbindRunningSecurityGroupStub
+	fakeReturns := fake.unbindRunningSecurityGroupReturns
+	fake.recordInvocation("UnbindRunningSecurityGroup", []interface{}{arg1, arg2, arg3})
+	fake.unbindRunningSecurityGroupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *CFSecurityGroupRepository) UnbindRunningSecurityGroupCallCount() int {
+	fake.unbindRunningSecurityGroupMutex.RLock()
+	defer fake.unbindRunningSecurityGroupMutex.RUnlock()
+	return len(fake.unbindRunningSecurityGroupArgsForCall)
+}
+
+func (fake *CFSecurityGroupRepository) UnbindRunningSecurityGroupCalls(stub func(context.Context, authorization.Info, repositories.UnbindRunningSecurityGroupMessage) error) {
+	fake.unbindRunningSecurityGroupMutex.Lock()
+	defer fake.unbindRunningSecurityGroupMutex.Unlock()
+	fake.UnbindRunningSecurityGroupStub = stub
+}
+
+func (fake *CFSecurityGroupRepository) UnbindRunningSecurityGroupArgsForCall(i int) (context.Context, authorization.Info, repositories.UnbindRunningSecurityGroupMessage) {
+	fake.unbindRunningSecurityGroupMutex.RLock()
+	defer fake.unbindRunningSecurityGroupMutex.RUnlock()
+	argsForCall := fake.unbindRunningSecurityGroupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *CFSecurityGroupRepository) UnbindRunningSecurityGroupReturns(result1 error) {
+	fake.unbindRunningSecurityGroupMutex.Lock()
+	defer fake.unbindRunningSecurityGroupMutex.Unlock()
+	fake.UnbindRunningSecurityGroupStub = nil
+	fake.unbindRunningSecurityGroupReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *CFSecurityGroupRepository) UnbindRunningSecurityGroupReturnsOnCall(i int, result1 error) {
+	fake.unbindRunningSecurityGroupMutex.Lock()
+	defer fake.unbindRunningSecurityGroupMutex.Unlock()
+	fake.UnbindRunningSecurityGroupStub = nil
+	if fake.unbindRunningSecurityGroupReturnsOnCall == nil {
+		fake.unbindRunningSecurityGroupReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.unbindRunningSecurityGroupReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *CFSecurityGroupRepository) UnbindStagingSecurityGroup(arg1 context.Context, arg2 authorization.Info, arg3 repositories.UnbindStagingSecurityGroupMessage) error {
+	fake.unbindStagingSecurityGroupMutex.Lock()
+	ret, specificReturn := fake.unbindStagingSecurityGroupReturnsOnCall[len(fake.unbindStagingSecurityGroupArgsForCall)]
+	fake.unbindStagingSecurityGroupArgsForCall = append(fake.unbindStagingSecurityGroupArgsForCall, struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 repositories.UnbindStagingSecurityGroupMessage
+	}{arg1, arg2, arg3})
+	stub := fake.UnbindStagingSecurityGroupStub
+	fakeReturns := fake.unbindStagingSecurityGroupReturns
+	fake.recordInvocation("UnbindStagingSecurityGroup", []interface{}{arg1, arg2, arg3})
+	fake.unbindStagingSecurityGroupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *CFSecurityGroupRepository) UnbindStagingSecurityGroupCallCount() int {
+	fake.unbindStagingSecurityGroupMutex.RLock()
+	defer fake.unbindStagingSecurityGroupMutex.RUnlock()
+	return len(fake.unbindStagingSecurityGroupArgsForCall)
+}
+
+func (fake *CFSecurityGroupRepository) UnbindStagingSecurityGroupCalls(stub func(context.Context, authorization.Info, repositories.UnbindStagingSecurityGroupMessage) error) {
+	fake.unbindStagingSecurityGroupMutex.Lock()
+	defer fake.unbindStagingSecurityGroupMutex.Unlock()
+	fake.UnbindStagingSecurityGroupStub = stub
+}
+
+func (fake *CFSecurityGroupRepository) UnbindStagingSecurityGroupArgsForCall(i int) (context.Context, authorization.Info, repositories.UnbindStagingSecurityGroupMessage) {
+	fake.unbindStagingSecurityGroupMutex.RLock()
+	defer fake.unbindStagingSecurityGroupMutex.RUnlock()
+	argsForCall := fake.unbindStagingSecurityGroupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *CFSecurityGroupRepository) UnbindStagingSecurityGroupReturns(result1 error) {
+	fake.unbindStagingSecurityGroupMutex.Lock()
+	defer fake.unbindStagingSecurityGroupMutex.Unlock()
+	fake.UnbindStagingSecurityGroupStub = nil
+	fake.unbindStagingSecurityGroupReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *CFSecurityGroupRepository) UnbindStagingSecurityGroupReturnsOnCall(i int, result1 error) {
+	fake.unbindStagingSecurityGroupMutex.Lock()
+	defer fake.unbindStagingSecurityGroupMutex.Unlock()
+	fake.UnbindStagingSecurityGroupStub = nil
+	if fake.unbindStagingSecurityGroupReturnsOnCall == nil {
+		fake.unbindStagingSecurityGroupReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.unbindStagingSecurityGroupReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *CFSecurityGroupRepository) UpdateSecurityGroup(arg1 context.Context, arg2 authorization.Info, arg3 repositories.UpdateSecurityGroupMessage) (repositories.SecurityGroupRecord, error) {
+	fake.updateSecurityGroupMutex.Lock()
+	ret, specificReturn := fake.updateSecurityGroupReturnsOnCall[len(fake.updateSecurityGroupArgsForCall)]
+	fake.updateSecurityGroupArgsForCall = append(fake.updateSecurityGroupArgsForCall, struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 repositories.UpdateSecurityGroupMessage
+	}{arg1, arg2, arg3})
+	stub := fake.UpdateSecurityGroupStub
+	fakeReturns := fake.updateSecurityGroupReturns
+	fake.recordInvocation("UpdateSecurityGroup", []interface{}{arg1, arg2, arg3})
+	fake.updateSecurityGroupMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *CFSecurityGroupRepository) UpdateSecurityGroupCallCount() int {
+	fake.updateSecurityGroupMutex.RLock()
+	defer fake.updateSecurityGroupMutex.RUnlock()
+	return len(fake.updateSecurityGroupArgsForCall)
+}
+
+func (fake *CFSecurityGroupRepository) UpdateSecurityGroupCalls(stub func(context.Context, authorization.Info, repositories.UpdateSecurityGroupMessage) (repositories.SecurityGroupRecord, error)) {
+	fake.updateSecurityGroupMutex.Lock()
+	defer fake.updateSecurityGroupMutex.Unlock()
+	fake.UpdateSecurityGroupStub = stub
+}
+
+func (fake *CFSecurityGroupRepository) UpdateSecurityGroupArgsForCall(i int) (context.Context, authorization.Info, repositories.UpdateSecurityGroupMessage) {
+	fake.updateSecurityGroupMutex.RLock()
+	defer fake.updateSecurityGroupMutex.RUnlock()
+	argsForCall := fake.updateSecurityGroupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *CFSecurityGroupRepository) UpdateSecurityGroupReturns(result1 repositories.SecurityGroupRecord, result2 error) {
+	fake.updateSecurityGroupMutex.Lock()
+	defer fake.updateSecurityGroupMutex.Unlock()
+	fake.UpdateSecurityGroupStub = nil
+	fake.updateSecurityGroupReturns = struct {
+		result1 repositories.SecurityGroupRecord
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *CFSecurityGroupRepository) UpdateSecurityGroupReturnsOnCall(i int, result1 repositories.SecurityGroupRecord, result2 error) {
+	fake.updateSecurityGroupMutex.Lock()
+	defer fake.updateSecurityGroupMutex.Unlock()
+	fake.UpdateSecurityGroupStub = nil
+	if fake.updateSecurityGroupReturnsOnCall == nil {
+		fake.updateSecurityGroupReturnsOnCall = make(map[int]struct {
+			result1 repositories.SecurityGroupRecord
+			result2 error
+		})
+	}
+	fake.updateSecurityGroupReturnsOnCall[i] = struct {
+		result1 repositories.SecurityGroupRecord
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *CFSecurityGroupRepository) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.bindSecurityGroupMutex.RLock()
+	defer fake.bindSecurityGroupMutex.RUnlock()
 	fake.createSecurityGroupMutex.RLock()
 	defer fake.createSecurityGroupMutex.RUnlock()
+	fake.deleteSecurityGroupMutex.RLock()
+	defer fake.deleteSecurityGroupMutex.RUnlock()
+	fake.getSecurityGroupMutex.RLock()
+	defer fake.getSecurityGroupMutex.RUnlock()
+	fake.listSecurityGroupsMutex.RLock()
+	defer fake.listSecurityGroupsMutex.RUnlock()
+	fake.unbindRunningSecurityGroupMutex.RLock()
+	defer fake.unbindRunningSecurityGroupMutex.RUnlock()
+	fake.unbindStagingSecurityGroupMutex.RLock()
+	defer fake.unbindStagingSecurityGroupMutex.RUnlock()
+	fake.updateSecurityGroupMutex.RLock()
+	defer fake.updateSecurityGroupMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

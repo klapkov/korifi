@@ -24,6 +24,11 @@ type SecurityGroupResponse struct {
 	Links           SecurityGroupLinks                  `json:"links"`
 }
 
+type SecurityGroupSpacesResponse struct {
+	Data  []payloads.RelationshipData `json:"data"`
+	Links SecurityGroupLinks          `json:"links"`
+}
+
 type SecurityGroupLinks struct {
 	Self Link `json:"self"`
 }
@@ -60,4 +65,30 @@ func toManyRelationshipData(guids []string) []payloads.RelationshipData {
 	return slices.Collect(it.Map(slices.Values(guids), func(guid string) payloads.RelationshipData {
 		return payloads.RelationshipData{GUID: guid}
 	}))
+}
+
+func ForSecurityGroupRunningSpaces(securityGroupRecord repositories.SecurityGroupRecord, baseURL url.URL) SecurityGroupSpacesResponse {
+	return SecurityGroupSpacesResponse{
+		Data: slices.Collect(it.Map(slices.Values(securityGroupRecord.RunningSpaces), func(v string) payloads.RelationshipData {
+			return payloads.RelationshipData{GUID: v}
+		})),
+		Links: SecurityGroupLinks{
+			Self: Link{
+				HRef: buildURL(baseURL).appendPath(securityGroupBase, securityGroupRecord.GUID, "relationships", "running_spaces").build(),
+			},
+		},
+	}
+}
+
+func ForSecurityGroupStagingSpaces(securityGroupRecord repositories.SecurityGroupRecord, baseURL url.URL) SecurityGroupSpacesResponse {
+	return SecurityGroupSpacesResponse{
+		Data: slices.Collect(it.Map(slices.Values(securityGroupRecord.StagingSpaces), func(v string) payloads.RelationshipData {
+			return payloads.RelationshipData{GUID: v}
+		})),
+		Links: SecurityGroupLinks{
+			Self: Link{
+				HRef: buildURL(baseURL).appendPath(securityGroupBase, securityGroupRecord.GUID, "relationships", "staging_spaces").build(),
+			},
+		},
+	}
 }
