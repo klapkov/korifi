@@ -14,6 +14,10 @@ func (r Relationship) Validate() error {
 	)
 }
 
+type ToManyRelationship struct {
+	Data []RelationshipData `json:"data"`
+}
+
 type RelationshipData struct {
 	GUID string `json:"guid"`
 }
