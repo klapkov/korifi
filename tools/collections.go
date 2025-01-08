@@ -19,6 +19,20 @@ func EmptyOrContains[S ~[]E, E comparable](elements S, e E) bool {
 	return slices.Contains(elements, e)
 }
 
+func EmptyOrContainsAllOf[S ~[]E, E comparable](subset, elements S) bool {
+	if len(subset) == 0 {
+		return true
+	}
+
+	for _, e := range subset {
+		if !slices.Contains(elements, e) {
+			return false
+		}
+	}
+
+	return true
+}
+
 func NilOrEquals[E comparable](value *E, expectedValue E) bool {
 	if value == nil {
 		return true
