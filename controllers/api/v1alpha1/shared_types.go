@@ -13,17 +13,19 @@ const (
 
 	CFAppGUIDLabelKey           = "korifi.cloudfoundry.org/app-guid"
 	CFAppRevisionKey            = "korifi.cloudfoundry.org/app-rev"
-	CFAppDisplayNameKey         = "korifi.cloudfoundry.org/display-name"
 	CFAppLastStopRevisionKey    = "korifi.cloudfoundry.org/last-stop-app-rev"
+	CFAppDisplayNameKey         = "korifi.cloudfoundry.org/display-name"
 	CFAppDefaultRevision        = "0"
 	CFPackageGUIDLabelKey       = "korifi.cloudfoundry.org/package-guid"
 	CFBuildGUIDLabelKey         = "korifi.cloudfoundry.org/build-guid"
+	CFWorkloadTypeLabelkey      = "korifi.cloudfoundry.org/workload-type"
 	CFProcessGUIDLabelKey       = "korifi.cloudfoundry.org/process-guid"
 	CFProcessTypeLabelKey       = "korifi.cloudfoundry.org/process-type"
 	CFDomainGUIDLabelKey        = "korifi.cloudfoundry.org/domain-guid"
 	CFEncodedDomainNameLabelKey = "korifi.cloudfoundry.org/domain-name"
 	CFRouteGUIDLabelKey         = "korifi.cloudfoundry.org/route-guid"
-	CFTaskGUIDLabelKey          = "korifi.cloudfoundry.org/task-guid"
+
+	CFTaskGUIDLabelKey = "korifi.cloudfoundry.org/task-guid"
 
 	GUIDLabelKey            = "korifi.cloudfoundry.org/guid"
 	SpaceGUIDKey            = "korifi.cloudfoundry.org/space-guid"

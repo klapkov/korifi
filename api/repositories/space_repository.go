@@ -215,6 +215,34 @@ func (r *SpaceRepo) PatchSpaceMetadata(ctx context.Context, authInfo authorizati
 	return cfSpaceToSpaceRecord(*cfSpace), nil
 }
 
+func (r *SpaceRepo) ListRunningSecurityGroups(ctx context.Context, authInfo authorization.Info, spaceGUID string) ([]SecurityGroupRecord, error) {
+	securityGroupList := &korifiv1alpha1.CFSecurityGroupList{}
+	if err := r.klient.List(ctx, securityGroupList, InNamespace("cf")); err != nil {
+		return []SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
+	}
+
+	filteredSecurityGroups := itx.FromSlice(securityGroupList.Items).Filter(func(cfSecurityGroup korifiv1alpha1.CFSecurityGroup) bool {
+		workloads, exists := cfSecurityGroup.Spec.Spaces[spaceGUID]
+		return cfSecurityGroup.Spec.GloballyEnabled.Running || (exists && workloads.Running)
+	})
+
+	return slices.Collect(it.Map(filteredSecurityGroups, ToSecurityGroupRecord)), nil
+}
+
+func (r *SpaceRepo) ListStagingSecurityGroups(ctx context.Context, authInfo authorization.Info, spaceGUID string) ([]SecurityGroupRecord, error) {
+	securityGroupList := &korifiv1alpha1.CFSecurityGroupList{}
+	if err := r.klient.List(ctx, securityGroupList, InNamespace("cf")); err != nil {
+		return []SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
+	}
+
+	filteredSecurityGroups := itx.FromSlice(securityGroupList.Items).Filter(func(cfSecurityGroup korifiv1alpha1.CFSecurityGroup) bool {
+		workloads, exists := cfSecurityGroup.Spec.Spaces[spaceGUID]
+		return cfSecurityGroup.Spec.GloballyEnabled.Staging || (exists && workloads.Staging)
+	})
+
+	return slices.Collect(it.Map(filteredSecurityGroups, ToSecurityGroupRecord)), nil
+}
+
 func (r *SpaceRepo) GetDeletedAt(ctx context.Context, authInfo authorization.Info, spaceGUID string) (*time.Time, error) {
 	space, err := r.GetSpace(ctx, authInfo, spaceGUID)
 	if err != nil {
