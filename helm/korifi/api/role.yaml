@@ -27,6 +27,7 @@ rules:
       - cfroutes
       - cfservicebindings
       - cfserviceinstances
+      - cfsecuritygroups
       - cfspaces
       - cftasks
     verbs:

@@ -242,6 +242,7 @@ func main() {
 	serviceBrokerRepo := repositories.NewServiceBrokerRepo(userClientFactory, cfg.RootNamespace)
 	serviceOfferingRepo := repositories.NewServiceOfferingRepo(userClientFactory, cfg.RootNamespace, serviceBrokerRepo, nsPermissions)
 	servicePlanRepo := repositories.NewServicePlanRepo(userClientFactory, cfg.RootNamespace, orgRepo)
+	securityGroupRepo := repositories.NewSecurityGroupRepo(userClientFactory, cfg.RootNamespace, nsPermissions, namespaceRetriever)
 
 	processStats := actions.NewProcessStats(processRepo, appRepo, metricsRepo)
 	manifest := actions.NewManifest(
@@ -460,6 +461,12 @@ func main() {
 			requestValidator,
 			servicePlanRepo,
 			relationshipsRepo,
+		),
+		handlers.NewSecurityGroup(
+			*serverURL,
+			securityGroupRepo,
+			spaceRepo,
+			requestValidator,
 		),
 	}
 	for _, handler := range apiHandlers {
