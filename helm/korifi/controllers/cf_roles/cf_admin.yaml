@@ -150,6 +150,32 @@ rules:
   - update
   - watch
 
+- apiGroups: 
+  - networking.k8s.io
+  resources: 
+  - networkpolicies
+  verbs: 
+  - list 
+  - get
+  - watch
+  - patch 
+  - update 
+  - create
+  - delete
+
+- apiGroups:
+  - korifi.cloudfoundry.org
+  resources:
+  - cfsecuritygroups
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+
 - apiGroups:
   - korifi.cloudfoundry.org
   resources:

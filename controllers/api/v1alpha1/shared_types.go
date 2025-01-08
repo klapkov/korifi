@@ -17,6 +17,7 @@ const (
 	CFAppDefaultRevision     = "0"
 	CFPackageGUIDLabelKey    = "korifi.cloudfoundry.org/package-guid"
 	CFBuildGUIDLabelKey      = "korifi.cloudfoundry.org/build-guid"
+	CFWorkloadTypeLabelkey   = "korifi.cloudfoundry.org/workload-type"
 	CFProcessGUIDLabelKey    = "korifi.cloudfoundry.org/process-guid"
 	CFProcessTypeLabelKey    = "korifi.cloudfoundry.org/process-type"
 	CFDomainGUIDLabelKey     = "korifi.cloudfoundry.org/domain-guid"
