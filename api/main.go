@@ -235,6 +235,7 @@ func main() {
 	serviceBrokerRepo := repositories.NewServiceBrokerRepo(klient, cfg.RootNamespace)
 	serviceOfferingRepo := repositories.NewServiceOfferingRepo(klient, cfg.RootNamespace, serviceBrokerRepo, nsPermissions)
 	servicePlanRepo := repositories.NewServicePlanRepo(klient, cfg.RootNamespace, orgRepo)
+	securityGroupRepo := repositories.NewSecurityGroupRepo(klient, cfg.RootNamespace, nsPermissions, namespaceRetriever)
 
 	processStats := actions.NewProcessStats(processRepo, appRepo, metricsRepo)
 	manifest := actions.NewManifest(
@@ -477,6 +478,12 @@ func main() {
 			requestValidator,
 			servicePlanRepo,
 			relationshipsRepo,
+		),
+		handlers.NewSecurityGroup(
+			*serverURL,
+			securityGroupRepo,
+			spaceRepo,
+			requestValidator,
 		),
 	}
 

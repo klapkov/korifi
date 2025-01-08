@@ -14,6 +14,19 @@ func (r Relationship) Validate() error {
 	)
 }
 
+type ToManyRelationship struct {
+	Data []RelationshipData `json:"data"`
+}
+
+func (r ToManyRelationship) CollectGUIDs() []string {
+	var guids []string
+	for _, s := range r.Data {
+		guids = append(guids, s.GUID)
+	}
+
+	return guids
+}
+
 type RelationshipData struct {
 	GUID string `json:"guid"`
 }
