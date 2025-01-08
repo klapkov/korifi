@@ -29,6 +29,7 @@ import (
 	"code.cloudfoundry.org/korifi/controllers/config"
 	"code.cloudfoundry.org/korifi/controllers/controllers/networking/domains"
 	"code.cloudfoundry.org/korifi/controllers/controllers/networking/routes"
+	securitygroups "code.cloudfoundry.org/korifi/controllers/controllers/networking/security_groups"
 	"code.cloudfoundry.org/korifi/controllers/controllers/services/bindings"
 	managed_bindings "code.cloudfoundry.org/korifi/controllers/controllers/services/bindings/managed"
 	upsi_bindings "code.cloudfoundry.org/korifi/controllers/controllers/services/bindings/upsi"
@@ -51,6 +52,7 @@ import (
 	controllersfinalizer "code.cloudfoundry.org/korifi/controllers/webhooks/finalizer"
 	domainswebhook "code.cloudfoundry.org/korifi/controllers/webhooks/networking/domains"
 	routeswebhook "code.cloudfoundry.org/korifi/controllers/webhooks/networking/routes"
+	securitygroupswebhook "code.cloudfoundry.org/korifi/controllers/webhooks/networking/security_groups"
 	"code.cloudfoundry.org/korifi/controllers/webhooks/relationships"
 	bindingswebhook "code.cloudfoundry.org/korifi/controllers/webhooks/services/bindings"
 	brokerswebhook "code.cloudfoundry.org/korifi/controllers/webhooks/services/brokers"
@@ -189,6 +191,17 @@ func main() {
 			env.NewAppEnvBuilder(mgr.GetClient()),
 		).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "CFBuildpackBuild")
+			os.Exit(1)
+		}
+
+		if err = securitygroups.NewReconciler(
+			mgr.GetClient(),
+			k8sClient,
+			mgr.GetScheme(),
+			controllersLog,
+			controllerConfig.CFRootNamespace,
+		).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "CFSecurityGroup")
 			os.Exit(1)
 		}
 
@@ -401,6 +414,14 @@ func main() {
 			uncachedClient,
 		).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "CFRoute")
+			os.Exit(1)
+		}
+
+		if err = securitygroupswebhook.NewValidator(
+			validation.NewDuplicateValidator(coordination.NewNameRegistry(uncachedClient, securitygroupswebhook.SecurityGroupEnyityType)),
+			controllerConfig.CFRootNamespace,
+		).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "CFSecurityGroup")
 			os.Exit(1)
 		}
 
