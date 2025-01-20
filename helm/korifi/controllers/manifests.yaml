@@ -137,6 +137,7 @@ webhooks:
           - cfdomains
           - cfservicebindings
           - cfserviceinstances
+          - cfsecuritygroups
     sideEffects: None
   - admissionReviewVersions:
       - v1
