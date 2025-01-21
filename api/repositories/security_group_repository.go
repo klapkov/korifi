@@ -3,7 +3,6 @@ package repositories
 import (
 	"context"
 	"fmt"
-	"log"
 	"slices"
 	"time"
 
@@ -185,10 +184,6 @@ func (r *SecurityGroupRepo) CreateSecurityGroup(ctx context.Context, authInfo au
 		},
 	}
 
-	if message.GloballyEnabled.Running || message.GloballyEnabled.Staging {
-		cfSecurityGroup.ObjectMeta.Labels = map[string]string{korifiv1alpha1.CFSecurityGroupTypeLabel: "global"}
-	}
-
 	if err = userClient.Create(ctx, cfSecurityGroup); err != nil {
 		return SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
 	}
@@ -207,13 +202,7 @@ func (r *SecurityGroupRepo) ListSecurityGroups(ctx context.Context, authInfo aut
 		return []SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
 	}
 
-	log.Printf("before filtering: %+v", securityGroupList.Items)
-
 	filteredSecurityGroups := itx.FromSlice(securityGroupList.Items).Filter(message.matches)
-
-	filtered := slices.Collect(it.Map(filteredSecurityGroups, toSecurityGroupRecord))
-
-	log.Printf("after filtering: %+v", filtered)
 	return slices.Collect(it.Map(filteredSecurityGroups, toSecurityGroupRecord)), nil
 }
 

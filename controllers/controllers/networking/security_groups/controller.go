@@ -3,12 +3,12 @@ package securitygroups
 import (
 	"context"
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
 
 	korifiv1alpha1 "code.cloudfoundry.org/korifi/controllers/api/v1alpha1"
 	"code.cloudfoundry.org/korifi/tools"
-
 	"code.cloudfoundry.org/korifi/tools/k8s"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -16,6 +16,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	k8sclient "k8s.io/client-go/kubernetes"
@@ -28,8 +29,6 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-const ProtocolICMP corev1.Protocol = "ICMP"
 
 type Reconciler struct {
 	k8sClient           client.Client
@@ -89,15 +88,6 @@ func (r *Reconciler) spaceUpdatesToSecurityGroups(ctx context.Context, o client.
 
 	return requests
 }
-
-// func (r *Reconciler) isSpaceScoped(object client.Object) bool {
-// 	securityGroup, ok := object.(*korifiv1alpha1.CFSecurityGroup)
-// 	if !ok {
-// 		return true
-// 	}
-
-// 	return !securityGroup.Spec.GloballyEnabled.Running || !securityGroup.Spec.GloballyEnabled.Staging
-// }
 
 //+kubebuilder:rbac:groups=korifi.cloudfoundry.org,resources=cfsecuritygroups,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=korifi.cloudfoundry.org,resources=cfsecuritygroups/status,verbs=get;update;patch
@@ -196,7 +186,7 @@ func (r *Reconciler) reconcileGlobalNetworkPolicies(ctx context.Context, securit
 
 		securityGroup.Labels = tools.SetMapValue(securityGroup.Labels, korifiv1alpha1.CFSecurityGroupTypeLabel, korifiv1alpha1.CFSecurityGroupTypeGlobal)
 
-		networkPolicy, err := toNetworkPolicy(securityGroup, space.Name, workloadType)
+		networkPolicy, err := securityGroupToNetworkPolicy(securityGroup, space.Name, workloadType)
 		if err != nil {
 			return err
 		}
@@ -234,7 +224,7 @@ func (r *Reconciler) reconcileNetworkPolicies(
 			return err
 		}
 
-		networkPolicy, err := toNetworkPolicy(securityGroup, space, workloadType)
+		networkPolicy, err := securityGroupToNetworkPolicy(securityGroup, space, workloadType)
 		if err != nil {
 			return err
 		}
@@ -248,7 +238,7 @@ func (r *Reconciler) reconcileNetworkPolicies(
 }
 
 func (r *Reconciler) createNetworkPolicy(ctx context.Context, securityGroup *korifiv1alpha1.CFSecurityGroup, space, workloadType string) error {
-	networkPolicy, err := toNetworkPolicy(securityGroup, space, workloadType)
+	networkPolicy, err := securityGroupToNetworkPolicy(securityGroup, space, workloadType)
 	if err != nil {
 		return err
 	}
@@ -260,38 +250,10 @@ func (r *Reconciler) createNetworkPolicy(ctx context.Context, securityGroup *kor
 	return nil
 }
 
-func toNetworkPolicy(securityGroup *korifiv1alpha1.CFSecurityGroup, space string, workloadType string) (*v1.NetworkPolicy, error) {
-	var egressRules []v1.NetworkPolicyEgressRule
-
-	for _, rule := range securityGroup.Spec.Rules {
-		egressRule := v1.NetworkPolicyEgressRule{
-			To: []v1.NetworkPolicyPeer{
-				{
-					IPBlock: &v1.IPBlock{
-						CIDR: rule.Destination,
-					},
-				},
-			},
-		}
-
-		if len(rule.Ports) != 0 {
-			ports, err := toNetworkPolicyPorts(rule.Ports, rule.Protocol)
-
-			if err != nil {
-				return nil, err
-			}
-
-			egressRule.Ports = ports
-		} else {
-			if rule.Protocol != "any" {
-				egressRule.Ports = append(egressRule.Ports, v1.NetworkPolicyPort{
-					Protocol: getProtocol(rule.Protocol),
-				})
-			}
-		}
-
-		egressRules = append(egressRules, egressRule)
-
+func securityGroupToNetworkPolicy(securityGroup *korifiv1alpha1.CFSecurityGroup, space, workloadType string) (*v1.NetworkPolicy, error) {
+	egressRules, err := buildEgressRules(securityGroup.Spec.Rules)
+	if err != nil {
+		return &v1.NetworkPolicy{}, fmt.Errorf("failed to build egress rules: %w", err)
 	}
 
 	return &v1.NetworkPolicy{
@@ -314,52 +276,207 @@ func toNetworkPolicy(securityGroup *korifiv1alpha1.CFSecurityGroup, space string
 	}, nil
 }
 
-func toNetworkPolicyPorts(ports, protocol string) ([]v1.NetworkPolicyPort, error) {
+func buildEgressRules(rules []korifiv1alpha1.SecurityGroupRule) ([]v1.NetworkPolicyEgressRule, error) {
+	var egressRules []v1.NetworkPolicyEgressRule
+
+	for _, rule := range rules {
+		networkPolicyPorts, err := buildNetworkPolicyPorts(rule)
+		if err != nil {
+			return []v1.NetworkPolicyEgressRule{}, err
+		}
+
+		networkPolicyPeers, err := buildNetworkPolicyPeer(rule)
+		if err != nil {
+			return []v1.NetworkPolicyEgressRule{}, err
+		}
+
+		egressRules = append(egressRules, v1.NetworkPolicyEgressRule{
+			Ports: networkPolicyPorts,
+			To:    networkPolicyPeers,
+		})
+	}
+
+	return egressRules, nil
+}
+
+func buildNetworkPolicyPorts(rule korifiv1alpha1.SecurityGroupRule) ([]v1.NetworkPolicyPort, error) {
 	var networkPolicyPorts []v1.NetworkPolicyPort
 
-	for _, port := range strings.Split(ports, ",") {
-		parsedPort, err := strconv.Atoi(strings.TrimSpace(port))
+	if rule.Protocol == "all" {
+		networkPolicyPorts = append(networkPolicyPorts, v1.NetworkPolicyPort{
+			Protocol: tools.PtrTo(corev1.ProtocolTCP),
+		})
+
+		networkPolicyPorts = append(networkPolicyPorts, v1.NetworkPolicyPort{
+			Protocol: tools.PtrTo(corev1.ProtocolUDP),
+		})
+
+		return networkPolicyPorts, nil
+	}
+
+	if strings.Contains(rule.Ports, "-") {
+		port, err := parseRangePorts(rule.Ports, rule.Protocol)
 		if err != nil {
-			return []v1.NetworkPolicyPort{}, fmt.Errorf("invalid port : %w", err)
+			return []v1.NetworkPolicyPort{}, err
+
+		}
+		networkPolicyPorts = append(networkPolicyPorts, port)
+		return networkPolicyPorts, nil
+	}
+
+	for _, port := range strings.Split(rule.Ports, ",") {
+		parsedPort, err := portStringToInt(port)
+		if err != nil {
+			return []v1.NetworkPolicyPort{}, err
 
 		}
 
-		policyPort := v1.NetworkPolicyPort{
+		networkPolicyPorts = append(networkPolicyPorts, v1.NetworkPolicyPort{
+			Protocol: getProtocol(rule.Protocol),
 			Port: &intstr.IntOrString{
 				Type:   intstr.Int,
 				IntVal: int32(parsedPort),
 			},
-		}
-
-		// If port is not specified, it defaults to tcp, so if protocol is all, we need to do more
-
-		if protocol != "all" {
-			policyPort.Protocol = getProtocol(protocol)
-		}
-
-		networkPolicyPorts = append(networkPolicyPorts, policyPort)
+		})
 	}
 
 	return networkPolicyPorts, nil
 }
 
+func parseRangePorts(ports, protocol string) (v1.NetworkPolicyPort, error) {
+	rangePorts := strings.Split(ports, "-")
+
+	startPort := rangePorts[0]
+	endPort := rangePorts[1]
+
+	startParsedPort, err := portStringToInt(startPort)
+	if err != nil {
+		return v1.NetworkPolicyPort{}, err
+
+	}
+
+	endParsedPort, err := portStringToInt(endPort)
+	if err != nil {
+		return v1.NetworkPolicyPort{}, err
+
+	}
+
+	return v1.NetworkPolicyPort{
+		Protocol: getProtocol(protocol),
+		Port: &intstr.IntOrString{
+			Type:   intstr.Int,
+			IntVal: int32(startParsedPort),
+		},
+		EndPort: tools.PtrTo(int32(endParsedPort)),
+	}, nil
+}
+
+func portStringToInt(port string) (int, error) {
+	intPort, err := strconv.Atoi(strings.TrimSpace(port))
+	if err != nil {
+		return 0, fmt.Errorf("invalid port : %w", err)
+
+	}
+
+	return intPort, nil
+}
+
+func buildNetworkPolicyPeer(rule korifiv1alpha1.SecurityGroupRule) ([]v1.NetworkPolicyPeer, error) {
+	var networkPolicyPeers []v1.NetworkPolicyPeer
+
+	if strings.Contains(rule.Destination, "-") {
+		// Handle destination when it is a gange like: 192.168.1.1-192.168.1.255
+		parts := strings.Split(rule.Destination, "-")
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("invalid IP range format: %s", rule.Destination)
+		}
+
+		cidrs := generateCIDRs(parts[0], parts[1])
+		for _, cidr := range cidrs {
+			networkPolicyPeers = append(networkPolicyPeers, v1.NetworkPolicyPeer{
+				IPBlock: &v1.IPBlock{
+					CIDR: cidr,
+				},
+			})
+		}
+
+		return networkPolicyPeers, nil
+	}
+
+	// Handle destination when it is a valid CIDR
+	if _, _, err := net.ParseCIDR(rule.Destination); err == nil {
+		networkPolicyPeers = append(networkPolicyPeers, v1.NetworkPolicyPeer{
+			IPBlock: &v1.IPBlock{
+				CIDR: rule.Destination,
+			},
+		})
+		return networkPolicyPeers, nil
+	}
+
+	// Handle destination when it is just an IP
+	if ip := net.ParseIP(rule.Destination); ip != nil {
+		networkPolicyPeers = append(networkPolicyPeers, v1.NetworkPolicyPeer{
+			IPBlock: &v1.IPBlock{
+				CIDR: fmt.Sprintf("%s/32", rule.Destination),
+			},
+		})
+		return networkPolicyPeers, nil
+	}
+
+	return nil, fmt.Errorf("invalid destination: %s", rule.Destination)
+}
+
+// Converts an IP address string to its 32-bit integer representation
+func ipToUint32(ip string) uint32 {
+	parsedIP := net.ParseIP(ip).To4()
+	if parsedIP == nil {
+		panic(fmt.Sprintf("Invalid IPv4 address: %s", ip))
+	}
+	return uint32(parsedIP[0])<<24 | uint32(parsedIP[1])<<16 | uint32(parsedIP[2])<<8 | uint32(parsedIP[3])
+}
+
+// Converts a 32-bit integer representation of an IP address back to string
+func uint32ToIP(ip uint32) string {
+	return fmt.Sprintf("%d.%d.%d.%d", (ip>>24)&0xFF, (ip>>16)&0xFF, (ip>>8)&0xFF, ip&0xFF)
+}
+
+// Generate the minimal set of CIDRs to cover the IP range
+func generateCIDRs(startIP, endIP string) []string {
+	a1 := ipToUint32(startIP)
+	a2 := ipToUint32(endIP)
+	var cidrs []string
+
+	for a2 >= a1 {
+		mask := uint32(0xFFFFFFFF)
+		length := 32
+
+		// Find the largest mask that fits within the range
+		for mask > 0 {
+			nextMask := mask << 1
+			if (a1&nextMask) != a1 || (a1|^nextMask) > a2 {
+				break
+			}
+			mask = nextMask
+			length--
+		}
+
+		cidrs = append(cidrs, fmt.Sprintf("%s/%d", uint32ToIP(a1), length))
+		a1 |= ^mask
+		if a1+1 < a1 { // Handle overflow
+			break
+		}
+		a1++
+	}
+	return cidrs
+}
+
 func getProtocol(protocol string) *corev1.Protocol {
 	switch protocol {
 	case "tcp":
-		tcp := corev1.ProtocolTCP
-		return &tcp
+		return tools.PtrTo(corev1.ProtocolTCP)
 	case "udp":
-		udp := corev1.ProtocolUDP
-		return &udp
-	// kubernetes returns a error that it is not allowed
-	// case "icmp":
-	// 	icmp := ProtocolICMP
-	// 	return &icmp
+		return tools.PtrTo(corev1.ProtocolUDP)
 	default:
 		return nil
 	}
 }
-
-// func isGlobal(securityGroup *korifiv1alpha1.CFSecurityGroup) bool {
-// 	return securityGroup.Spec.GloballyEnabled.Running || securityGroup.Spec.GloballyEnabled.Staging
-// }

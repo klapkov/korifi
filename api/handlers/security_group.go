@@ -134,11 +134,20 @@ func (h *SecurityGroup) bindRunning(r *http.Request) (*routing.Response, error) 
 	if err := h.requestValidator.DecodeAndValidateJSONPayload(r, &payload); err != nil {
 		return nil, apierrors.LogAndReturn(logger, err, "failed to decode payload")
 	}
-	// TODO: Check if spaces exist
+
 	guid := routing.URLParam(r, "guid")
 	_, err := h.securityGroupRepo.GetSecurityGroup(r.Context(), authInfo, guid)
 	if err != nil {
 		return nil, apierrors.LogAndReturn(logger, err, "failed to bind security group, it does not exist")
+	}
+
+	var spaceGUIDs []string
+	for _, space := range payload.Data {
+		spaceGUIDs = append(spaceGUIDs, space.GUID)
+	}
+
+	if _, err = h.spaceRepo.ListSpaces(r.Context(), authInfo, repositories.ListSpacesMessage{GUIDs: spaceGUIDs}); err != nil {
+		return nil, apierrors.LogAndReturn(logger, err, "failed to bind security group, space  does not exist")
 	}
 
 	securityGroup, err := h.securityGroupRepo.BindRunningSecurityGroup(r.Context(), authInfo, payload.ToMessage(guid))
@@ -157,11 +166,20 @@ func (h *SecurityGroup) bindStaging(r *http.Request) (*routing.Response, error) 
 	if err := h.requestValidator.DecodeAndValidateJSONPayload(r, &payload); err != nil {
 		return nil, apierrors.LogAndReturn(logger, err, "failed to decode payload")
 	}
-	// TODO: Check if spaces exist
+
 	guid := routing.URLParam(r, "guid")
 	_, err := h.securityGroupRepo.GetSecurityGroup(r.Context(), authInfo, guid)
 	if err != nil {
 		return nil, apierrors.LogAndReturn(logger, err, "failed to bind security group, it does not exist")
+	}
+
+	var spaceGUIDs []string
+	for _, space := range payload.Data {
+		spaceGUIDs = append(spaceGUIDs, space.GUID)
+	}
+
+	if _, err = h.spaceRepo.ListSpaces(r.Context(), authInfo, repositories.ListSpacesMessage{GUIDs: spaceGUIDs}); err != nil {
+		return nil, apierrors.LogAndReturn(logger, err, "failed to bind security group, space  does not exist")
 	}
 
 	securityGroup, err := h.securityGroupRepo.BindStagingSecurityGroup(r.Context(), authInfo, payload.ToMessage(guid))
@@ -176,9 +194,17 @@ func (h *SecurityGroup) unbindRunning(r *http.Request) (*routing.Response, error
 	authInfo, _ := authorization.InfoFromContext(r.Context())
 	logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.security-group.unbind-running-spaces")
 
-	// Check if we search for space on CC
 	guid := routing.URLParam(r, "guid")
 	spaceGuid := routing.URLParam(r, "space_guid")
+
+	_, err := h.securityGroupRepo.GetSecurityGroup(r.Context(), authInfo, guid)
+	if err != nil {
+		return nil, apierrors.LogAndReturn(logger, err, "failed to bind security group, it does not exist")
+	}
+
+	if _, err = h.spaceRepo.GetSpace(r.Context(), authInfo, spaceGuid); err != nil {
+		return nil, apierrors.LogAndReturn(logger, err, "failed to bind security group, space  does not exist")
+	}
 
 	if err := h.securityGroupRepo.UnbindRunningSecurityGroup(r.Context(), authInfo, repositories.UnbindRunningSecurityGroupMessage{
 		GUID:      guid,
@@ -194,9 +220,17 @@ func (h *SecurityGroup) unbindStaging(r *http.Request) (*routing.Response, error
 	authInfo, _ := authorization.InfoFromContext(r.Context())
 	logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.security-group.unbind-staging-spaces")
 
-	// Check if we search for space on CC
 	guid := routing.URLParam(r, "guid")
 	spaceGuid := routing.URLParam(r, "space_guid")
+
+	_, err := h.securityGroupRepo.GetSecurityGroup(r.Context(), authInfo, guid)
+	if err != nil {
+		return nil, apierrors.LogAndReturn(logger, err, "failed to bind security group, it does not exist")
+	}
+
+	if _, err = h.spaceRepo.GetSpace(r.Context(), authInfo, spaceGuid); err != nil {
+		return nil, apierrors.LogAndReturn(logger, err, "failed to bind security group, space  does not exist")
+	}
 
 	if err := h.securityGroupRepo.UnbindStagingSecurityGroup(r.Context(), authInfo, repositories.UnbindStagingSecurityGroupMessage{
 		GUID:      guid,
