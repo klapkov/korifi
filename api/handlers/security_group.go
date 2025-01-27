@@ -73,8 +73,8 @@ func (h *SecurityGroup) create(r *http.Request) (*routing.Response, error) {
 	authInfo, _ := authorization.InfoFromContext(r.Context())
 	logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.security-group.create")
 
-	var payload payloads.SecurityGroupCreate
-	if err := h.requestValidator.DecodeAndValidateJSONPayload(r, &payload); err != nil {
+	payload := new(payloads.SecurityGroupCreate)
+	if err := h.requestValidator.DecodeAndValidateJSONPayload(r, payload); err != nil {
 		return nil, apierrors.LogAndReturn(logger, err, "failed to decode payload")
 	}
 
@@ -90,8 +90,8 @@ func (h *SecurityGroup) list(r *http.Request) (*routing.Response, error) {
 	authInfo, _ := authorization.InfoFromContext(r.Context())
 	logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.security-group.list")
 
-	var payload payloads.SecurityGroupList
-	if err := h.requestValidator.DecodeAndValidateURLValues(r, &payload); err != nil {
+	payload := new(payloads.SecurityGroupList)
+	if err := h.requestValidator.DecodeAndValidateURLValues(r, payload); err != nil {
 		return nil, apierrors.LogAndReturn(logger, err, "failed to decode payload")
 	}
 
@@ -107,8 +107,8 @@ func (h *SecurityGroup) update(r *http.Request) (*routing.Response, error) {
 	authInfo, _ := authorization.InfoFromContext(r.Context())
 	logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.security-group.update")
 
-	var payload payloads.SecurityGroupUpdate
-	if err := h.requestValidator.DecodeAndValidateJSONPayload(r, &payload); err != nil {
+	payload := new(payloads.SecurityGroupUpdate)
+	if err := h.requestValidator.DecodeAndValidateJSONPayload(r, payload); err != nil {
 		return nil, apierrors.LogAndReturn(logger, err, "failed to decode payload")
 	}
 
@@ -130,8 +130,8 @@ func (h *SecurityGroup) bindRunning(r *http.Request) (*routing.Response, error) 
 	authInfo, _ := authorization.InfoFromContext(r.Context())
 	logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.security-group.bind-running-spaces")
 
-	var payload payloads.SecurityGroupBindRunning
-	if err := h.requestValidator.DecodeAndValidateJSONPayload(r, &payload); err != nil {
+	payload := new(payloads.SecurityGroupBindRunning)
+	if err := h.requestValidator.DecodeAndValidateJSONPayload(r, payload); err != nil {
 		return nil, apierrors.LogAndReturn(logger, err, "failed to decode payload")
 	}
 
@@ -162,8 +162,8 @@ func (h *SecurityGroup) bindStaging(r *http.Request) (*routing.Response, error) 
 	authInfo, _ := authorization.InfoFromContext(r.Context())
 	logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.security-group.bind-staging-spaces")
 
-	var payload payloads.SecurityGroupBindStaging
-	if err := h.requestValidator.DecodeAndValidateJSONPayload(r, &payload); err != nil {
+	payload := new(payloads.SecurityGroupBindStaging)
+	if err := h.requestValidator.DecodeAndValidateJSONPayload(r, payload); err != nil {
 		return nil, apierrors.LogAndReturn(logger, err, "failed to decode payload")
 	}
 

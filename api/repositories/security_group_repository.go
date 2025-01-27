@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"log"
 	"slices"
 	"time"
 
@@ -44,6 +45,8 @@ func NewSecurityGroupRepo(
 type CreateSecurityGroupMessage struct {
 	DisplayName     string
 	Rules           []korifiv1alpha1.SecurityGroupRule
+	RunningSpaces   []string
+	StagingSpaces   []string
 	GloballyEnabled korifiv1alpha1.GloballyEnabled
 }
 
@@ -57,6 +60,10 @@ type ListSecurityGroupMessage struct {
 }
 
 func (m *ListSecurityGroupMessage) matches(cfSecurityGroup korifiv1alpha1.CFSecurityGroup) bool {
+	log.Printf("guids: %+v", tools.EmptyOrContains(m.GUIDs, cfSecurityGroup.Name))
+	log.Printf("names: %+v", tools.EmptyOrContains(m.Names, cfSecurityGroup.Spec.DisplayName))
+	log.Printf("names: %+v", tools.EmptyOrContainsAllOf(m.RunningSpaceGUIDs, cfSecurityGroup.Spec.RunningSpaces))
+
 	return tools.EmptyOrContains(m.GUIDs, cfSecurityGroup.Name) &&
 		tools.EmptyOrContains(m.Names, cfSecurityGroup.Spec.DisplayName) &&
 		tools.NilOrEquals(m.GloballyEnabledStaging, cfSecurityGroup.Spec.GloballyEnabled.Staging) &&
@@ -137,13 +144,14 @@ func (m *UnbindStagingSecurityGroupMessage) apply(cfSecurityGroup *korifiv1alpha
 }
 
 type SecurityGroupRecord struct {
-	GUID          string
-	Name          string
-	Rules         []korifiv1alpha1.SecurityGroupRule
-	CreatedAt     time.Time
-	DeletedAt     *time.Time
-	RunningSpaces []string
-	StagingSpaces []string
+	GUID            string
+	CreatedAt       time.Time
+	DeletedAt       *time.Time
+	Name            string
+	Rules           []korifiv1alpha1.SecurityGroupRule
+	GloballyEnabled korifiv1alpha1.GloballyEnabled
+	RunningSpaces   []string
+	StagingSpaces   []string
 }
 
 func (r *SecurityGroupRepo) GetSecurityGroup(ctx context.Context, authInfo authorization.Info, GUID string) (SecurityGroupRecord, error) {
@@ -180,6 +188,8 @@ func (r *SecurityGroupRepo) CreateSecurityGroup(ctx context.Context, authInfo au
 		Spec: korifiv1alpha1.CFSecurityGroupSpec{
 			DisplayName:     message.DisplayName,
 			Rules:           message.Rules,
+			RunningSpaces:   message.RunningSpaces,
+			StagingSpaces:   message.StagingSpaces,
 			GloballyEnabled: message.GloballyEnabled,
 		},
 	}
@@ -191,6 +201,7 @@ func (r *SecurityGroupRepo) CreateSecurityGroup(ctx context.Context, authInfo au
 	return toSecurityGroupRecord(*cfSecurityGroup), nil
 }
 
+// TODO:  broken for some reason, names, guids and running staging spaces filters do not work
 func (r *SecurityGroupRepo) ListSecurityGroups(ctx context.Context, authInfo authorization.Info, message ListSecurityGroupMessage) ([]SecurityGroupRecord, error) {
 	userClient, err := r.userClientFactory.BuildClient(authInfo)
 	if err != nil {
@@ -202,7 +213,11 @@ func (r *SecurityGroupRepo) ListSecurityGroups(ctx context.Context, authInfo aut
 		return []SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
 	}
 
+	log.Printf("before filtering: %+v", securityGroupList)
+	log.Printf("message: %+v", message)
 	filteredSecurityGroups := itx.FromSlice(securityGroupList.Items).Filter(message.matches)
+	asa := slices.Collect(it.Map(filteredSecurityGroups, toSecurityGroupRecord))
+	log.Printf("after filtering: %+v", asa)
 	return slices.Collect(it.Map(filteredSecurityGroups, toSecurityGroupRecord)), nil
 }
 
@@ -358,12 +373,13 @@ func (r *SecurityGroupRepo) DeleteSecurityGroup(ctx context.Context, authInfo au
 
 func toSecurityGroupRecord(cfSecurityGroup korifiv1alpha1.CFSecurityGroup) SecurityGroupRecord {
 	return SecurityGroupRecord{
-		GUID:      cfSecurityGroup.Name,
-		Name:      cfSecurityGroup.Spec.DisplayName,
-		Rules:     cfSecurityGroup.Spec.Rules,
-		CreatedAt: cfSecurityGroup.CreationTimestamp.Time,
+		GUID:            cfSecurityGroup.Name,
+		CreatedAt:       cfSecurityGroup.CreationTimestamp.Time,
+		DeletedAt:       golangTime(cfSecurityGroup.DeletionTimestamp),
+		Name:            cfSecurityGroup.Spec.DisplayName,
+		GloballyEnabled: cfSecurityGroup.Spec.GloballyEnabled,
+		Rules:           cfSecurityGroup.Spec.Rules,
 		// UpdatedAt:     getLastUpdatedTime(&),
-		DeletedAt:     golangTime(cfSecurityGroup.DeletionTimestamp),
 		RunningSpaces: cfSecurityGroup.Spec.RunningSpaces,
 		StagingSpaces: cfSecurityGroup.Spec.StagingSpaces,
 	}

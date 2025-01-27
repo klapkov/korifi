@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	ss "log"
 	"strconv"
 	"strings"
 	"time"
@@ -688,6 +689,8 @@ func (r *BuildWorkloadReconciler) reconcileKpackImage(
 			BuildWorkloadLabelKey:                 buildWorkload.Name,
 			korifiv1alpha1.CFWorkloadTypeLabelkey: korifiv1alpha1.CFWorkloadTypeBuild,
 		}
+
+		ss.Printf("staging labels: %+v", desiredKpackImage.Labels)
 
 		desiredKpackImage.Spec = buildv1alpha2.ImageSpec{
 			Tag: kpackImageTag,

@@ -1,17 +1,21 @@
 package v1alpha1
 
 import (
+	"fmt"
+	"strings"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	CFWorkloadTypeApp              = "app"
-	CFWorkloadTypeBuild            = "build"
-	CFSecurityGroupTypeLabel       = "korifi.cloudfoundry.org/security-group-type"
-	CFSecurityGroupNameLabel       = "korifi.cloudfoundry.org/security-group-name"
-	CFSecurityGroupTypeGlobal      = "global"
-	CFSecurityGroupTypeSpaceScoped = "space-scoped"
-	CFSecurityGroupFinalizerName   = "cfSecurityGroup.korifi.cloudfoundry.org"
+	ProtocolTCP                  = "tcp"
+	ProtocolUDP                  = "udp"
+	ProtocolALL                  = "all"
+	CFWorkloadTypeApp            = "app"
+	CFWorkloadTypeBuild          = "build"
+	CFSecurityGroupTypeLabel     = "korifi.cloudfoundry.org/security-group-type"
+	CFSecurityGroupTypeGlobal    = "global"
+	CFSecurityGroupFinalizerName = "cfSecurityGroup.korifi.cloudfoundry.org"
 )
 
 type SecurityGroupRule struct {
@@ -63,6 +67,14 @@ type CFSecurityGroup struct {
 	Spec CFSecurityGroupSpec `json:"spec,omitempty"`
 
 	Status CFSecurityGroupStatus `json:"status,omitempty"`
+}
+
+func (s CFSecurityGroup) UniqueName() string {
+	return strings.ToLower(s.Spec.DisplayName)
+}
+
+func (b CFSecurityGroup) UniqueValidationErrorMessage() string {
+	return fmt.Sprintf("The security group name is taken: %s", b.Spec.DisplayName)
 }
 
 func (g *CFSecurityGroup) StatusConditions() *[]metav1.Condition {

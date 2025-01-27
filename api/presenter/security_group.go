@@ -14,11 +14,12 @@ import (
 const securityGroupBase = "/v3/security_groups"
 
 type SecurityGroupResponse struct {
-	GUID      string                             `json:"guid"`
-	CreatedAt string                             `json:"created_at"`
-	Name      string                             `json:"name"`
-	Rules     []korifiv1alpha1.SecurityGroupRule `json:"rules"`
-	Links     SecurityGroupLinks                 `json:"links"`
+	GUID            string                             `json:"guid"`
+	CreatedAt       string                             `json:"created_at"`
+	Name            string                             `json:"name"`
+	GloballyEnabled korifiv1alpha1.GloballyEnabled     `json;"globally_enabled"`
+	Rules           []korifiv1alpha1.SecurityGroupRule `json:"rules"`
+	Links           SecurityGroupLinks                 `json:"links"`
 }
 
 type SecurityGroupRunningSpacesResponse struct {
@@ -32,10 +33,11 @@ type SecurityGroupLinks struct {
 
 func ForSecurityGroup(securityGroupRecord repositories.SecurityGroupRecord, baseURL url.URL, includes ...model.IncludedResource) SecurityGroupResponse {
 	return SecurityGroupResponse{
-		GUID:      securityGroupRecord.GUID,
-		CreatedAt: formatTimestamp(&securityGroupRecord.CreatedAt),
-		Name:      securityGroupRecord.Name,
-		Rules:     securityGroupRecord.Rules,
+		GUID:            securityGroupRecord.GUID,
+		CreatedAt:       formatTimestamp(&securityGroupRecord.CreatedAt),
+		Name:            securityGroupRecord.Name,
+		GloballyEnabled: securityGroupRecord.GloballyEnabled,
+		Rules:           securityGroupRecord.Rules,
 		Links: SecurityGroupLinks{
 			Self: Link{
 				HRef: buildURL(baseURL).appendPath(securityGroupBase, securityGroupRecord.GUID).build(),

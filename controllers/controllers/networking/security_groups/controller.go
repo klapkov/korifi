@@ -141,7 +141,7 @@ func (r *Reconciler) finalizeCFSecurityGroup(ctx context.Context, securityGroup 
 	networkPolicies, err := r.privilegedK8sClient.
 		NetworkingV1().
 		NetworkPolicies("").
-		List(ctx, metav1.ListOptions{LabelSelector: fmt.Sprintf("%s=%s", korifiv1alpha1.CFSecurityGroupNameLabel, securityGroup.Name)})
+		List(ctx, metav1.ListOptions{FieldSelector: fmt.Sprintf("metadata.name=%s", securityGroup.Name)})
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -260,9 +260,9 @@ func securityGroupToNetworkPolicy(securityGroup *korifiv1alpha1.CFSecurityGroup,
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      securityGroup.Name,
 			Namespace: space,
-			Labels: map[string]string{
-				korifiv1alpha1.CFSecurityGroupNameLabel: securityGroup.Name,
-			},
+			// Labels: map[string]string{
+			// 	korifiv1alpha1.CFSecurityGroupNameLabel: securityGroup.Name,
+			// },
 		},
 		Spec: v1.NetworkPolicySpec{
 			PolicyTypes: []v1.PolicyType{
@@ -302,7 +302,7 @@ func buildEgressRules(rules []korifiv1alpha1.SecurityGroupRule) ([]v1.NetworkPol
 func buildNetworkPolicyPorts(rule korifiv1alpha1.SecurityGroupRule) ([]v1.NetworkPolicyPort, error) {
 	var networkPolicyPorts []v1.NetworkPolicyPort
 
-	if rule.Protocol == "all" {
+	if rule.Protocol == korifiv1alpha1.ProtocolALL {
 		networkPolicyPorts = append(networkPolicyPorts, v1.NetworkPolicyPort{
 			Protocol: tools.PtrTo(corev1.ProtocolTCP),
 		})
@@ -472,9 +472,9 @@ func generateCIDRs(startIP, endIP string) []string {
 
 func getProtocol(protocol string) *corev1.Protocol {
 	switch protocol {
-	case "tcp":
+	case korifiv1alpha1.ProtocolTCP:
 		return tools.PtrTo(corev1.ProtocolTCP)
-	case "udp":
+	case korifiv1alpha1.ProtocolUDP:
 		return tools.PtrTo(corev1.ProtocolUDP)
 	default:
 		return nil
