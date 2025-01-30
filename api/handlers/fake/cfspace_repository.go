@@ -70,6 +70,21 @@ type CFSpaceRepository struct {
 		result1 repositories.SpaceRecord
 		result2 error
 	}
+	ListRunningSecurityGroupsStub        func(context.Context, authorization.Info, string) ([]repositories.SecurityGroupRecord, error)
+	listRunningSecurityGroupsMutex       sync.RWMutex
+	listRunningSecurityGroupsArgsForCall []struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 string
+	}
+	listRunningSecurityGroupsReturns struct {
+		result1 []repositories.SecurityGroupRecord
+		result2 error
+	}
+	listRunningSecurityGroupsReturnsOnCall map[int]struct {
+		result1 []repositories.SecurityGroupRecord
+		result2 error
+	}
 	ListSpacesStub        func(context.Context, authorization.Info, repositories.ListSpacesMessage) ([]repositories.SpaceRecord, error)
 	listSpacesMutex       sync.RWMutex
 	listSpacesArgsForCall []struct {
@@ -83,6 +98,21 @@ type CFSpaceRepository struct {
 	}
 	listSpacesReturnsOnCall map[int]struct {
 		result1 []repositories.SpaceRecord
+		result2 error
+	}
+	ListStagingSecurityGroupsStub        func(context.Context, authorization.Info, string) ([]repositories.SecurityGroupRecord, error)
+	listStagingSecurityGroupsMutex       sync.RWMutex
+	listStagingSecurityGroupsArgsForCall []struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 string
+	}
+	listStagingSecurityGroupsReturns struct {
+		result1 []repositories.SecurityGroupRecord
+		result2 error
+	}
+	listStagingSecurityGroupsReturnsOnCall map[int]struct {
+		result1 []repositories.SecurityGroupRecord
 		result2 error
 	}
 	PatchSpaceMetadataStub        func(context.Context, authorization.Info, repositories.PatchSpaceMetadataMessage) (repositories.SpaceRecord, error)
@@ -365,6 +395,72 @@ func (fake *CFSpaceRepository) GetSpaceReturnsOnCall(i int, result1 repositories
 	}{result1, result2}
 }
 
+func (fake *CFSpaceRepository) ListRunningSecurityGroups(arg1 context.Context, arg2 authorization.Info, arg3 string) ([]repositories.SecurityGroupRecord, error) {
+	fake.listRunningSecurityGroupsMutex.Lock()
+	ret, specificReturn := fake.listRunningSecurityGroupsReturnsOnCall[len(fake.listRunningSecurityGroupsArgsForCall)]
+	fake.listRunningSecurityGroupsArgsForCall = append(fake.listRunningSecurityGroupsArgsForCall, struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 string
+	}{arg1, arg2, arg3})
+	stub := fake.ListRunningSecurityGroupsStub
+	fakeReturns := fake.listRunningSecurityGroupsReturns
+	fake.recordInvocation("ListRunningSecurityGroups", []interface{}{arg1, arg2, arg3})
+	fake.listRunningSecurityGroupsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *CFSpaceRepository) ListRunningSecurityGroupsCallCount() int {
+	fake.listRunningSecurityGroupsMutex.RLock()
+	defer fake.listRunningSecurityGroupsMutex.RUnlock()
+	return len(fake.listRunningSecurityGroupsArgsForCall)
+}
+
+func (fake *CFSpaceRepository) ListRunningSecurityGroupsCalls(stub func(context.Context, authorization.Info, string) ([]repositories.SecurityGroupRecord, error)) {
+	fake.listRunningSecurityGroupsMutex.Lock()
+	defer fake.listRunningSecurityGroupsMutex.Unlock()
+	fake.ListRunningSecurityGroupsStub = stub
+}
+
+func (fake *CFSpaceRepository) ListRunningSecurityGroupsArgsForCall(i int) (context.Context, authorization.Info, string) {
+	fake.listRunningSecurityGroupsMutex.RLock()
+	defer fake.listRunningSecurityGroupsMutex.RUnlock()
+	argsForCall := fake.listRunningSecurityGroupsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *CFSpaceRepository) ListRunningSecurityGroupsReturns(result1 []repositories.SecurityGroupRecord, result2 error) {
+	fake.listRunningSecurityGroupsMutex.Lock()
+	defer fake.listRunningSecurityGroupsMutex.Unlock()
+	fake.ListRunningSecurityGroupsStub = nil
+	fake.listRunningSecurityGroupsReturns = struct {
+		result1 []repositories.SecurityGroupRecord
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *CFSpaceRepository) ListRunningSecurityGroupsReturnsOnCall(i int, result1 []repositories.SecurityGroupRecord, result2 error) {
+	fake.listRunningSecurityGroupsMutex.Lock()
+	defer fake.listRunningSecurityGroupsMutex.Unlock()
+	fake.ListRunningSecurityGroupsStub = nil
+	if fake.listRunningSecurityGroupsReturnsOnCall == nil {
+		fake.listRunningSecurityGroupsReturnsOnCall = make(map[int]struct {
+			result1 []repositories.SecurityGroupRecord
+			result2 error
+		})
+	}
+	fake.listRunningSecurityGroupsReturnsOnCall[i] = struct {
+		result1 []repositories.SecurityGroupRecord
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *CFSpaceRepository) ListSpaces(arg1 context.Context, arg2 authorization.Info, arg3 repositories.ListSpacesMessage) ([]repositories.SpaceRecord, error) {
 	fake.listSpacesMutex.Lock()
 	ret, specificReturn := fake.listSpacesReturnsOnCall[len(fake.listSpacesArgsForCall)]
@@ -427,6 +523,72 @@ func (fake *CFSpaceRepository) ListSpacesReturnsOnCall(i int, result1 []reposito
 	}
 	fake.listSpacesReturnsOnCall[i] = struct {
 		result1 []repositories.SpaceRecord
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *CFSpaceRepository) ListStagingSecurityGroups(arg1 context.Context, arg2 authorization.Info, arg3 string) ([]repositories.SecurityGroupRecord, error) {
+	fake.listStagingSecurityGroupsMutex.Lock()
+	ret, specificReturn := fake.listStagingSecurityGroupsReturnsOnCall[len(fake.listStagingSecurityGroupsArgsForCall)]
+	fake.listStagingSecurityGroupsArgsForCall = append(fake.listStagingSecurityGroupsArgsForCall, struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 string
+	}{arg1, arg2, arg3})
+	stub := fake.ListStagingSecurityGroupsStub
+	fakeReturns := fake.listStagingSecurityGroupsReturns
+	fake.recordInvocation("ListStagingSecurityGroups", []interface{}{arg1, arg2, arg3})
+	fake.listStagingSecurityGroupsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *CFSpaceRepository) ListStagingSecurityGroupsCallCount() int {
+	fake.listStagingSecurityGroupsMutex.RLock()
+	defer fake.listStagingSecurityGroupsMutex.RUnlock()
+	return len(fake.listStagingSecurityGroupsArgsForCall)
+}
+
+func (fake *CFSpaceRepository) ListStagingSecurityGroupsCalls(stub func(context.Context, authorization.Info, string) ([]repositories.SecurityGroupRecord, error)) {
+	fake.listStagingSecurityGroupsMutex.Lock()
+	defer fake.listStagingSecurityGroupsMutex.Unlock()
+	fake.ListStagingSecurityGroupsStub = stub
+}
+
+func (fake *CFSpaceRepository) ListStagingSecurityGroupsArgsForCall(i int) (context.Context, authorization.Info, string) {
+	fake.listStagingSecurityGroupsMutex.RLock()
+	defer fake.listStagingSecurityGroupsMutex.RUnlock()
+	argsForCall := fake.listStagingSecurityGroupsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *CFSpaceRepository) ListStagingSecurityGroupsReturns(result1 []repositories.SecurityGroupRecord, result2 error) {
+	fake.listStagingSecurityGroupsMutex.Lock()
+	defer fake.listStagingSecurityGroupsMutex.Unlock()
+	fake.ListStagingSecurityGroupsStub = nil
+	fake.listStagingSecurityGroupsReturns = struct {
+		result1 []repositories.SecurityGroupRecord
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *CFSpaceRepository) ListStagingSecurityGroupsReturnsOnCall(i int, result1 []repositories.SecurityGroupRecord, result2 error) {
+	fake.listStagingSecurityGroupsMutex.Lock()
+	defer fake.listStagingSecurityGroupsMutex.Unlock()
+	fake.ListStagingSecurityGroupsStub = nil
+	if fake.listStagingSecurityGroupsReturnsOnCall == nil {
+		fake.listStagingSecurityGroupsReturnsOnCall = make(map[int]struct {
+			result1 []repositories.SecurityGroupRecord
+			result2 error
+		})
+	}
+	fake.listStagingSecurityGroupsReturnsOnCall[i] = struct {
+		result1 []repositories.SecurityGroupRecord
 		result2 error
 	}{result1, result2}
 }
@@ -508,8 +670,12 @@ func (fake *CFSpaceRepository) Invocations() map[string][][]interface{} {
 	defer fake.getDeletedAtMutex.RUnlock()
 	fake.getSpaceMutex.RLock()
 	defer fake.getSpaceMutex.RUnlock()
+	fake.listRunningSecurityGroupsMutex.RLock()
+	defer fake.listRunningSecurityGroupsMutex.RUnlock()
 	fake.listSpacesMutex.RLock()
 	defer fake.listSpacesMutex.RUnlock()
+	fake.listStagingSecurityGroupsMutex.RLock()
+	defer fake.listStagingSecurityGroupsMutex.RUnlock()
 	fake.patchSpaceMetadataMutex.RLock()
 	defer fake.patchSpaceMetadataMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
