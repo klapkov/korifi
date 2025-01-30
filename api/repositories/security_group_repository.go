@@ -167,7 +167,7 @@ func (r *SecurityGroupRepo) GetSecurityGroup(ctx context.Context, authInfo autho
 		return SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
 	}
 
-	return toSecurityGroupRecord(*cfSecurityGroup), nil
+	return ToSecurityGroupRecord(*cfSecurityGroup), nil
 }
 
 func (r *SecurityGroupRepo) CreateSecurityGroup(ctx context.Context, authInfo authorization.Info, message CreateSecurityGroupMessage) (SecurityGroupRecord, error) {
@@ -194,7 +194,7 @@ func (r *SecurityGroupRepo) CreateSecurityGroup(ctx context.Context, authInfo au
 		return SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
 	}
 
-	return toSecurityGroupRecord(*cfSecurityGroup), nil
+	return ToSecurityGroupRecord(*cfSecurityGroup), nil
 }
 
 func (r *SecurityGroupRepo) ListSecurityGroups(ctx context.Context, authInfo authorization.Info, message ListSecurityGroupMessage) ([]SecurityGroupRecord, error) {
@@ -209,7 +209,7 @@ func (r *SecurityGroupRepo) ListSecurityGroups(ctx context.Context, authInfo aut
 	}
 
 	filteredSecurityGroups := itx.FromSlice(securityGroupList.Items).Filter(message.matches)
-	return slices.Collect(it.Map(filteredSecurityGroups, toSecurityGroupRecord)), nil
+	return slices.Collect(it.Map(filteredSecurityGroups, ToSecurityGroupRecord)), nil
 }
 
 func (r *SecurityGroupRepo) UpdateSecurityGroup(ctx context.Context, authInfo authorization.Info, message UpdateSecurityGroupMessage) (SecurityGroupRecord, error) {
@@ -235,7 +235,7 @@ func (r *SecurityGroupRepo) UpdateSecurityGroup(ctx context.Context, authInfo au
 		return SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
 	}
 
-	return toSecurityGroupRecord(*cfSecurityGroup), nil
+	return ToSecurityGroupRecord(*cfSecurityGroup), nil
 }
 
 func (r *SecurityGroupRepo) BindRunningSecurityGroup(ctx context.Context, authInfo authorization.Info, message BindRunningSecurityGroupMessage) (SecurityGroupRecord, error) {
@@ -261,7 +261,7 @@ func (r *SecurityGroupRepo) BindRunningSecurityGroup(ctx context.Context, authIn
 		return SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
 	}
 
-	return toSecurityGroupRecord(*cfSecurityGroup), nil
+	return ToSecurityGroupRecord(*cfSecurityGroup), nil
 }
 
 func (r *SecurityGroupRepo) BindStagingSecurityGroup(ctx context.Context, authInfo authorization.Info, message BindStagingSecurityGroupMessage) (SecurityGroupRecord, error) {
@@ -287,7 +287,7 @@ func (r *SecurityGroupRepo) BindStagingSecurityGroup(ctx context.Context, authIn
 		return SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
 	}
 
-	return toSecurityGroupRecord(*cfSecurityGroup), nil
+	return ToSecurityGroupRecord(*cfSecurityGroup), nil
 }
 
 func (r *SecurityGroupRepo) UnbindRunningSecurityGroup(ctx context.Context, authInfo authorization.Info, message UnbindRunningSecurityGroupMessage) error {
@@ -362,7 +362,7 @@ func (r *SecurityGroupRepo) DeleteSecurityGroup(ctx context.Context, authInfo au
 	return nil
 }
 
-func toSecurityGroupRecord(cfSecurityGroup korifiv1alpha1.CFSecurityGroup) SecurityGroupRecord {
+func ToSecurityGroupRecord(cfSecurityGroup korifiv1alpha1.CFSecurityGroup) SecurityGroupRecord {
 	return SecurityGroupRecord{
 		GUID:            cfSecurityGroup.Name,
 		CreatedAt:       cfSecurityGroup.CreationTimestamp.Time,
