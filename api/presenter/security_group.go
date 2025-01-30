@@ -14,12 +14,13 @@ import (
 const securityGroupBase = "/v3/security_groups"
 
 type SecurityGroupResponse struct {
-	GUID            string                             `json:"guid"`
-	CreatedAt       string                             `json:"created_at"`
-	Name            string                             `json:"name"`
-	GloballyEnabled korifiv1alpha1.GloballyEnabled     `json;"globally_enabled"`
-	Rules           []korifiv1alpha1.SecurityGroupRule `json:"rules"`
-	Links           SecurityGroupLinks                 `json:"links"`
+	GUID            string                              `json:"guid"`
+	CreatedAt       string                              `json:"created_at"`
+	Name            string                              `json:"name"`
+	GloballyEnabled korifiv1alpha1.GloballyEnabled      `json:"globally_enabled"`
+	Rules           []korifiv1alpha1.SecurityGroupRule  `json:"rules"`
+	Relationships   payloads.SecurityGroupRelationships `json:"relationships"`
+	Links           SecurityGroupLinks                  `json:"links"`
 }
 
 type SecurityGroupRunningSpacesResponse struct {
@@ -38,6 +39,18 @@ func ForSecurityGroup(securityGroupRecord repositories.SecurityGroupRecord, base
 		Name:            securityGroupRecord.Name,
 		GloballyEnabled: securityGroupRecord.GloballyEnabled,
 		Rules:           securityGroupRecord.Rules,
+		Relationships: payloads.SecurityGroupRelationships{
+			RunningSpaces: payloads.ToManyRelationship{
+				Data: slices.Collect(it.Map(slices.Values(securityGroupRecord.RunningSpaces), func(v string) payloads.RelationshipData {
+					return payloads.RelationshipData{GUID: v}
+				})),
+			},
+			StagingSpaces: payloads.ToManyRelationship{
+				Data: slices.Collect(it.Map(slices.Values(securityGroupRecord.StagingSpaces), func(v string) payloads.RelationshipData {
+					return payloads.RelationshipData{GUID: v}
+				})),
+			},
+		},
 		Links: SecurityGroupLinks{
 			Self: Link{
 				HRef: buildURL(baseURL).appendPath(securityGroupBase, securityGroupRecord.GUID).build(),

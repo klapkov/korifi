@@ -3,7 +3,6 @@ package repositories
 import (
 	"context"
 	"fmt"
-	"log"
 	"slices"
 	"time"
 
@@ -60,10 +59,6 @@ type ListSecurityGroupMessage struct {
 }
 
 func (m *ListSecurityGroupMessage) matches(cfSecurityGroup korifiv1alpha1.CFSecurityGroup) bool {
-	log.Printf("guids: %+v", tools.EmptyOrContains(m.GUIDs, cfSecurityGroup.Name))
-	log.Printf("names: %+v", tools.EmptyOrContains(m.Names, cfSecurityGroup.Spec.DisplayName))
-	log.Printf("names: %+v", tools.EmptyOrContainsAllOf(m.RunningSpaceGUIDs, cfSecurityGroup.Spec.RunningSpaces))
-
 	return tools.EmptyOrContains(m.GUIDs, cfSecurityGroup.Name) &&
 		tools.EmptyOrContains(m.Names, cfSecurityGroup.Spec.DisplayName) &&
 		tools.NilOrEquals(m.GloballyEnabledStaging, cfSecurityGroup.Spec.GloballyEnabled.Staging) &&
@@ -213,11 +208,7 @@ func (r *SecurityGroupRepo) ListSecurityGroups(ctx context.Context, authInfo aut
 		return []SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
 	}
 
-	log.Printf("before filtering: %+v", securityGroupList)
-	log.Printf("message: %+v", message)
 	filteredSecurityGroups := itx.FromSlice(securityGroupList.Items).Filter(message.matches)
-	asa := slices.Collect(it.Map(filteredSecurityGroups, toSecurityGroupRecord))
-	log.Printf("after filtering: %+v", asa)
 	return slices.Collect(it.Map(filteredSecurityGroups, toSecurityGroupRecord)), nil
 }
 

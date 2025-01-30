@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	ss "log"
 	"regexp"
 	"slices"
 	"sort"
@@ -190,8 +189,6 @@ func (r *AppWorkloadToStatefulsetConverter) Convert(appWorkload *korifiv1alpha1.
 		LabelAppWorkloadGUID:                  appWorkload.Name,
 		korifiv1alpha1.CFWorkloadTypeLabelkey: korifiv1alpha1.CFWorkloadTypeApp,
 	}
-
-	ss.Printf("app labels: %+v", labels)
 
 	statefulSet.Spec.Template.Labels = labels
 	statefulSet.Labels = labels

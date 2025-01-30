@@ -45,8 +45,8 @@ func (c SecurityGroupCreate) ToMessage() repositories.CreateSecurityGroupMessage
 type SecurityGroupList struct {
 	GUIDs                  string `json:"guids"`
 	Names                  string `json:"names"`
-	GloballyEnabledStaging bool   `json:"globally_enabled_staging"`
-	GloballyEnabledRunning bool   `json:"globally_enabled_running"`
+	GloballyEnabledStaging *bool  `json:"globally_enabled_staging"`
+	GloballyEnabledRunning *bool  `json:"globally_enabled_running"`
 	RunningSpaceGUIDs      string `json:"running_space_guids"`
 	StagingSpaceGUIDs      string `json:"staging_space_guids"`
 }
@@ -72,12 +72,16 @@ func (l *SecurityGroupList) DecodeFromURLValues(values url.Values) error {
 
 	l.GUIDs = values.Get("guids")
 	l.Names = values.Get("names")
-	if l.GloballyEnabledStaging, err = getBool(values, "globally_enabled_staging"); err != nil {
-		return err
+	globallyEnabledStaging, err := parseBool(values.Get("globally_enabled_staging"))
+	if err != nil {
+		return fmt.Errorf("failed to parse 'globally_enabled_staging' query parameter: %w", err)
 	}
-	if l.GloballyEnabledRunning, err = getBool(values, "globally_enabled_running"); err != nil {
-		return err
+	globallyEnabledRunning, err := parseBool(values.Get("globally_enabled_running"))
+	if err != nil {
+		return fmt.Errorf("failed to parse 'globally_enabled_running' query parameter: %w", err)
 	}
+	l.GloballyEnabledStaging = globallyEnabledStaging
+	l.GloballyEnabledRunning = globallyEnabledRunning
 	l.RunningSpaceGUIDs = values.Get("running_space_guids")
 	l.StagingSpaceGUIDs = values.Get("staging_space_guids")
 
@@ -88,8 +92,8 @@ func (l SecurityGroupList) ToMessage() repositories.ListSecurityGroupMessage {
 	return repositories.ListSecurityGroupMessage{
 		GUIDs:                  parse.ArrayParam(l.GUIDs),
 		Names:                  parse.ArrayParam(l.Names),
-		GloballyEnabledStaging: &l.GloballyEnabledStaging,
-		GloballyEnabledRunning: &l.GloballyEnabledRunning,
+		GloballyEnabledStaging: l.GloballyEnabledStaging,
+		GloballyEnabledRunning: l.GloballyEnabledRunning,
 		RunningSpaceGUIDs:      parse.ArrayParam(l.RunningSpaceGUIDs),
 		StagingSpaceGUIDs:      parse.ArrayParam(l.StagingSpaceGUIDs),
 	}
