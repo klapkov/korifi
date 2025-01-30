@@ -16,6 +16,7 @@ const securityGroupBase = "/v3/security_groups"
 type SecurityGroupResponse struct {
 	GUID            string                              `json:"guid"`
 	CreatedAt       string                              `json:"created_at"`
+	UpdatedAt       string                              `json:"updated_at"`
 	Name            string                              `json:"name"`
 	GloballyEnabled korifiv1alpha1.GloballyEnabled      `json:"globally_enabled"`
 	Rules           []korifiv1alpha1.SecurityGroupRule  `json:"rules"`
@@ -36,6 +37,7 @@ func ForSecurityGroup(securityGroupRecord repositories.SecurityGroupRecord, base
 	return SecurityGroupResponse{
 		GUID:            securityGroupRecord.GUID,
 		CreatedAt:       formatTimestamp(&securityGroupRecord.CreatedAt),
+		UpdatedAt:       formatTimestamp(securityGroupRecord.UpdatedAt),
 		Name:            securityGroupRecord.Name,
 		GloballyEnabled: securityGroupRecord.GloballyEnabled,
 		Rules:           securityGroupRecord.Rules,

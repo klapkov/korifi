@@ -228,29 +228,3 @@ func validateRulePorts(ports string) error {
 
 	return fmt.Errorf("The ports: %s is not in a valid format", ports)
 }
-
-// '{
-//   "name": "my-group0",
-//   "relationships": {
-//     "running_spaces": {
-//       "data": [
-//         { "guid": "c529463e-c381-4569-8c76-4977906f2eab" }
-//       ]
-//     }
-//   },
-//   "globally_enabled": {
-//     "running": true
-//   },
-//   "rules": [
-//     {
-//       "protocol": "tcp",
-//       "destination": "10.10.10.0-11.11.11.255",
-//       "ports": "443,80,8080"
-//     },
-//     {
-//       "protocol": "all",
-//       "destination": "10.10.10.0/24",
-//       "description": "Allow ping requests to private services"
-//     }
-//   ]
-// }'

@@ -141,6 +141,7 @@ func (m *UnbindStagingSecurityGroupMessage) apply(cfSecurityGroup *korifiv1alpha
 type SecurityGroupRecord struct {
 	GUID            string
 	CreatedAt       time.Time
+	UpdatedAt       *time.Time
 	DeletedAt       *time.Time
 	Name            string
 	Rules           []korifiv1alpha1.SecurityGroupRule
@@ -196,7 +197,6 @@ func (r *SecurityGroupRepo) CreateSecurityGroup(ctx context.Context, authInfo au
 	return toSecurityGroupRecord(*cfSecurityGroup), nil
 }
 
-// TODO:  broken for some reason, names, guids and running staging spaces filters do not work
 func (r *SecurityGroupRepo) ListSecurityGroups(ctx context.Context, authInfo authorization.Info, message ListSecurityGroupMessage) ([]SecurityGroupRecord, error) {
 	userClient, err := r.userClientFactory.BuildClient(authInfo)
 	if err != nil {
@@ -370,8 +370,8 @@ func toSecurityGroupRecord(cfSecurityGroup korifiv1alpha1.CFSecurityGroup) Secur
 		Name:            cfSecurityGroup.Spec.DisplayName,
 		GloballyEnabled: cfSecurityGroup.Spec.GloballyEnabled,
 		Rules:           cfSecurityGroup.Spec.Rules,
-		// UpdatedAt:     getLastUpdatedTime(&),
-		RunningSpaces: cfSecurityGroup.Spec.RunningSpaces,
-		StagingSpaces: cfSecurityGroup.Spec.StagingSpaces,
+		UpdatedAt:       getLastUpdatedTime(&cfSecurityGroup),
+		RunningSpaces:   cfSecurityGroup.Spec.RunningSpaces,
+		StagingSpaces:   cfSecurityGroup.Spec.StagingSpaces,
 	}
 }
