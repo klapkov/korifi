@@ -8,14 +8,16 @@ import (
 )
 
 const (
-	ProtocolTCP                  = "tcp"
-	ProtocolUDP                  = "udp"
-	ProtocolALL                  = "all"
-	CFWorkloadTypeApp            = "app"
-	CFWorkloadTypeBuild          = "build"
-	CFSecurityGroupTypeLabel     = "korifi.cloudfoundry.org/security-group-type"
-	CFSecurityGroupTypeGlobal    = "global"
-	CFSecurityGroupFinalizerName = "cfSecurityGroup.korifi.cloudfoundry.org"
+	ProtocolTCP                    = "tcp"
+	ProtocolUDP                    = "udp"
+	ProtocolALL                    = "all"
+	CFWorkloadTypeApp              = "app"
+	CFWorkloadTypeBuild            = "build"
+	CFSecurityGroupTypeLabel       = "korifi.cloudfoundry.org/security-group-type"
+	CFSecurityGroupTypeGlobal      = "global"
+	CFSecurityGroupTypeSpaceScoped = "space-scoped"
+	CFSecurityGroupNameLabel       = "korifi.cloudfoundry.org/security-group-name"
+	CFSecurityGroupFinalizerName   = "cfSecurityGroup.korifi.cloudfoundry.org"
 )
 
 type SecurityGroupRule struct {
@@ -29,8 +31,8 @@ type SecurityGroupRule struct {
 }
 
 type GloballyEnabled struct {
-	Running bool `json:"running,omitempty"`
-	Staging bool `json:"staging,omitempty"`
+	Running bool `json:"running"`
+	Staging bool `json:"staging"`
 }
 
 type GloballyEnabledUpdate struct {

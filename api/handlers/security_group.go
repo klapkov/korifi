@@ -187,7 +187,7 @@ func (h *SecurityGroup) bindStaging(r *http.Request) (*routing.Response, error) 
 		return nil, apierrors.LogAndReturn(logger, err, "failed to bind security group to running space")
 	}
 
-	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForSecurityGroupRunningSpaces(securityGroup, h.serverURL)), nil
+	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForSecurityGroupStagingSpaces(securityGroup, h.serverURL)), nil
 }
 
 func (h *SecurityGroup) unbindRunning(r *http.Request) (*routing.Response, error) {
@@ -247,11 +247,6 @@ func (h *SecurityGroup) delete(r *http.Request) (*routing.Response, error) {
 	logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.security-group.delete")
 
 	guid := routing.URLParam(r, "guid")
-	_, err := h.securityGroupRepo.GetSecurityGroup(r.Context(), authInfo, guid)
-	if err != nil {
-		return nil, apierrors.LogAndReturn(logger, err, "failed to delete security group, it does not exist")
-	}
-
 	if err := h.securityGroupRepo.DeleteSecurityGroup(r.Context(), authInfo, guid); err != nil {
 		return nil, apierrors.LogAndReturn(logger, err, "failed to delete security group with guid: %s", guid)
 	}

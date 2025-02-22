@@ -49,6 +49,9 @@ spec:
                     type: boolean
                   staging:
                     type: boolean
+                required:
+                - running
+                - staging
                 type: object
               rules:
                 items:

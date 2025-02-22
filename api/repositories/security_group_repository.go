@@ -98,8 +98,11 @@ type BindRunningSecurityGroupMessage struct {
 }
 
 func (m *BindRunningSecurityGroupMessage) apply(cfSecurityGroup *korifiv1alpha1.CFSecurityGroup) {
-	cfSecurityGroup.Spec.RunningSpaces = append(cfSecurityGroup.Spec.RunningSpaces, m.Spaces...)
-
+	for _, space := range m.Spaces {
+		if !slices.Contains(cfSecurityGroup.Spec.RunningSpaces, space) {
+			cfSecurityGroup.Spec.RunningSpaces = append(cfSecurityGroup.Spec.RunningSpaces, m.Spaces...)
+		}
+	}
 }
 
 type BindStagingSecurityGroupMessage struct {
@@ -108,8 +111,11 @@ type BindStagingSecurityGroupMessage struct {
 }
 
 func (m *BindStagingSecurityGroupMessage) apply(cfSecurityGroup *korifiv1alpha1.CFSecurityGroup) {
-	cfSecurityGroup.Spec.StagingSpaces = append(cfSecurityGroup.Spec.StagingSpaces, m.Spaces...)
-
+	for _, space := range m.Spaces {
+		if !slices.Contains(cfSecurityGroup.Spec.RunningSpaces, space) {
+			cfSecurityGroup.Spec.StagingSpaces = append(cfSecurityGroup.Spec.StagingSpaces, m.Spaces...)
+		}
+	}
 }
 
 type UnbindRunningSecurityGroupMessage struct {

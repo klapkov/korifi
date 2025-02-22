@@ -3,7 +3,9 @@ package securitygroups
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -130,6 +132,10 @@ func (r *Reconciler) ReconcileResource(ctx context.Context, securityGroup *korif
 		}
 	}
 
+	// if err := r.cleanOrphenedPolicies(ctx, securityGroup); err != nil {
+	// 	return ctrl.Result{}, err
+	// }
+
 	log.V(1).Info("Security Group reconciled")
 
 	return ctrl.Result{}, nil
@@ -165,6 +171,8 @@ func (r *Reconciler) reconcileGlobalNetworkPolicies(ctx context.Context, securit
 		return err
 	}
 
+	// log.Printf("spaces: %v+", len(spaces.Items))
+
 	for _, space := range spaces.Items {
 		networkPolicy := &v1.NetworkPolicy{
 			ObjectMeta: metav1.ObjectMeta{
@@ -175,6 +183,8 @@ func (r *Reconciler) reconcileGlobalNetworkPolicies(ctx context.Context, securit
 
 		if err := r.k8sClient.Get(ctx, client.ObjectKeyFromObject(networkPolicy), networkPolicy); err != nil {
 			if apierrors.IsNotFound(err) {
+				// log.Printf("not found: %+v", networkPolicy)
+
 				if err = r.createNetworkPolicy(ctx, securityGroup, space.Name, workloadType); err != nil {
 					return err
 				}
@@ -190,6 +200,8 @@ func (r *Reconciler) reconcileGlobalNetworkPolicies(ctx context.Context, securit
 		if err != nil {
 			return err
 		}
+
+		networkPolicy.Labels = tools.SetMapValue(networkPolicy.Labels, korifiv1alpha1.CFSecurityGroupTypeLabel, string(korifiv1alpha1.CFSecurityGroupTypeGlobal))
 
 		if err = r.k8sClient.Update(ctx, networkPolicy); err != nil {
 			return err
@@ -224,6 +236,8 @@ func (r *Reconciler) reconcileNetworkPolicies(
 			return err
 		}
 
+		securityGroup.Labels = tools.SetMapValue(securityGroup.Labels, korifiv1alpha1.CFSecurityGroupTypeLabel, korifiv1alpha1.CFSecurityGroupTypeSpaceScoped)
+
 		networkPolicy, err := securityGroupToNetworkPolicy(securityGroup, space, workloadType)
 		if err != nil {
 			return err
@@ -237,13 +251,42 @@ func (r *Reconciler) reconcileNetworkPolicies(
 	return nil
 }
 
+// sasasasas
+func (r *Reconciler) cleanOrphenedPolicies(ctx context.Context, securityGroup *korifiv1alpha1.CFSecurityGroup) error {
+	networkPolicies, err := r.privilegedK8sClient.
+		NetworkingV1().
+		NetworkPolicies("").
+		List(ctx, metav1.ListOptions{LabelSelector: fmt.Sprintf("%s=%s,%s=%s",
+			korifiv1alpha1.CFSecurityGroupNameLabel, securityGroup.Name,
+			korifiv1alpha1.CFSecurityGroupTypeLabel, korifiv1alpha1.CFSecurityGroupTypeGlobal,
+		)})
+	if err != nil {
+		return err
+	}
+
+	for _, policy := range networkPolicies.Items {
+		if !slices.Contains(securityGroup.Spec.RunningSpaces, policy.Namespace) &&
+			!slices.Contains(securityGroup.Spec.StagingSpaces, policy.Namespace) {
+
+			if err := r.k8sClient.Delete(ctx, &policy); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 func (r *Reconciler) createNetworkPolicy(ctx context.Context, securityGroup *korifiv1alpha1.CFSecurityGroup, space, workloadType string) error {
 	networkPolicy, err := securityGroupToNetworkPolicy(securityGroup, space, workloadType)
 	if err != nil {
 		return err
 	}
 
+	// log.Printf("policy: %+v", networkPolicy)
+
 	if err = r.k8sClient.Create(ctx, networkPolicy); err != nil {
+		log.Printf("wtf: %+v", err)
 		return err
 	}
 
@@ -260,9 +303,9 @@ func securityGroupToNetworkPolicy(securityGroup *korifiv1alpha1.CFSecurityGroup,
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      securityGroup.Name,
 			Namespace: space,
-			// Labels: map[string]string{
-			// 	korifiv1alpha1.CFSecurityGroupNameLabel: securityGroup.Name,
-			// },
+			Labels: map[string]string{
+				korifiv1alpha1.CFSecurityGroupNameLabel: securityGroup.Name,
+			},
 		},
 		Spec: v1.NetworkPolicySpec{
 			PolicyTypes: []v1.PolicyType{
