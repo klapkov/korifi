@@ -19,17 +19,16 @@ func EmptyOrContains[S ~[]E, E comparable](elements S, e E) bool {
 	return slices.Contains(elements, e)
 }
 
-func EmptyOrContainsAll[K comparable, V any](subset []K, m map[K]V) bool {
+func EmptyOrContainsAll[K comparable, V any](subset []K, m map[K]V, condition func(V) bool) bool {
 	if len(subset) == 0 {
 		return true
 	}
-
 	for _, key := range subset {
-		if _, exists := m[key]; !exists {
+		value, exists := m[key]
+		if !exists || !condition(value) {
 			return false
 		}
 	}
-
 	return true
 }
 
