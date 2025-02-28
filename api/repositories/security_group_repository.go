@@ -62,8 +62,8 @@ func (m *ListSecurityGroupMessage) matches(cfSecurityGroup korifiv1alpha1.CFSecu
 		tools.EmptyOrContains(m.Names, cfSecurityGroup.Spec.DisplayName) &&
 		tools.NilOrEquals(m.GloballyEnabledStaging, cfSecurityGroup.Spec.GloballyEnabled.Staging) &&
 		tools.NilOrEquals(m.GloballyEnabledRunning, cfSecurityGroup.Spec.GloballyEnabled.Running) &&
-		tools.EmptyOrContainsAll(m.RunningSpaceGUIDs, cfSecurityGroup.Spec.Spaces) &&
-		tools.EmptyOrContainsAll(m.StagingSpaceGUIDs, cfSecurityGroup.Spec.Spaces)
+		tools.EmptyOrContainsAll(m.RunningSpaceGUIDs, cfSecurityGroup.Spec.Spaces, func(s korifiv1alpha1.SecurityGroupWorkloads) bool { return s.Running }) &&
+		tools.EmptyOrContainsAll(m.StagingSpaceGUIDs, cfSecurityGroup.Spec.Spaces, func(s korifiv1alpha1.SecurityGroupWorkloads) bool { return s.Staging })
 }
 
 type UpdateSecurityGroupMessage struct {
