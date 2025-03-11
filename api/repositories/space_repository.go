@@ -55,6 +55,11 @@ type PatchSpaceMetadataMessage struct {
 	OrgGUID string
 }
 
+type SpaceIsolationRecord struct {
+	GUID string
+	Data string
+}
+
 type SpaceRecord struct {
 	Name             string
 	GUID             string
@@ -249,4 +254,10 @@ func (r *SpaceRepo) GetDeletedAt(ctx context.Context, authInfo authorization.Inf
 		return nil, err
 	}
 	return space.DeletedAt, nil
+}
+
+func (r *SpaceRepo) GetIsolationSegment(context.Context, authorization.Info, string) (SpaceIsolationRecord, error) {
+	return SpaceIsolationRecord{
+		Data: "",
+	}, nil
 }
