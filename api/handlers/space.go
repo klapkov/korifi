@@ -22,6 +22,7 @@ const (
 	RoutesForSpacePath = "/v3/spaces/{guid}/routes"
 	StagingSGSpacePath = "/v3/spaces/{guid}/staging_security_groups"
 	RunningSGSpacePath = "/v3/spaces/{guid}/running_security_groups"
+	SpaceIsoSegPath    = "/v3/spaces/{guid}/relationships/isolation_segment"
 )
 
 //counterfeiter:generate -o fake -fake-name CFSpaceRepository . CFSpaceRepository
@@ -35,6 +36,7 @@ type CFSpaceRepository interface {
 	GetDeletedAt(context.Context, authorization.Info, string) (*time.Time, error)
 	ListRunningSecurityGroups(context.Context, authorization.Info, string) ([]repositories.SecurityGroupRecord, error)
 	ListStagingSecurityGroups(context.Context, authorization.Info, string) ([]repositories.SecurityGroupRecord, error)
+	GetIsolationSegment(context.Context, authorization.Info, string) (repositories.SpaceIsolationRecord, error)
 }
 
 type Space struct {
@@ -209,6 +211,20 @@ func (h *Space) listStagingSecurityGroups(r *http.Request) (*routing.Response, e
 	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForList(presenter.ForSecurityGroup, securityGroups, h.apiBaseURL, *r.URL)), nil
 }
 
+func (h *Space) getIsolationSegment(r *http.Request) (*routing.Response, error) {
+	authInfo, _ := authorization.InfoFromContext(r.Context())
+	logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.space.get-isolation-segment")
+
+	spaceGUID := routing.URLParam(r, "guid")
+
+	isolation, err := h.spaceRepo.GetIsolationSegment(r.Context(), authInfo, spaceGUID)
+	if err != nil {
+		return nil, apierrors.LogAndReturn(logger, apierrors.ForbiddenAsNotFound(err), "Failed to fetch space isolation segment", "spaceGUID", spaceGUID)
+	}
+
+	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForSpaceIsolation(isolation, h.apiBaseURL)), nil
+}
+
 func (h *Space) UnauthenticatedRoutes() []routing.Route {
 	return nil
 }
@@ -222,6 +238,7 @@ func (h *Space) AuthenticatedRoutes() []routing.Route {
 		{Method: "GET", Pattern: SpacePath, Handler: h.get},
 		{Method: "DELETE", Pattern: RoutesForSpacePath, Handler: h.deleteUnmappedRoutes},
 		{Method: "GET", Pattern: StagingSGSpacePath, Handler: h.listStagingSecurityGroups},
+		{Method: "GET", Pattern: SpaceIsoSegPath, Handler: h.getIsolationSegment},
 		{Method: "GET", Pattern: RunningSGSpacePath, Handler: h.listRunningSecurityGroups},
 	}
 }

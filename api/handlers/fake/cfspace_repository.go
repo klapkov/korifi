@@ -55,6 +55,21 @@ type CFSpaceRepository struct {
 		result1 *time.Time
 		result2 error
 	}
+	GetIsolationSegmentStub        func(context.Context, authorization.Info, string) (repositories.SpaceIsolationRecord, error)
+	getIsolationSegmentMutex       sync.RWMutex
+	getIsolationSegmentArgsForCall []struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 string
+	}
+	getIsolationSegmentReturns struct {
+		result1 repositories.SpaceIsolationRecord
+		result2 error
+	}
+	getIsolationSegmentReturnsOnCall map[int]struct {
+		result1 repositories.SpaceIsolationRecord
+		result2 error
+	}
 	GetSpaceStub        func(context.Context, authorization.Info, string) (repositories.SpaceRecord, error)
 	getSpaceMutex       sync.RWMutex
 	getSpaceArgsForCall []struct {
@@ -325,6 +340,72 @@ func (fake *CFSpaceRepository) GetDeletedAtReturnsOnCall(i int, result1 *time.Ti
 	}
 	fake.getDeletedAtReturnsOnCall[i] = struct {
 		result1 *time.Time
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *CFSpaceRepository) GetIsolationSegment(arg1 context.Context, arg2 authorization.Info, arg3 string) (repositories.SpaceIsolationRecord, error) {
+	fake.getIsolationSegmentMutex.Lock()
+	ret, specificReturn := fake.getIsolationSegmentReturnsOnCall[len(fake.getIsolationSegmentArgsForCall)]
+	fake.getIsolationSegmentArgsForCall = append(fake.getIsolationSegmentArgsForCall, struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 string
+	}{arg1, arg2, arg3})
+	stub := fake.GetIsolationSegmentStub
+	fakeReturns := fake.getIsolationSegmentReturns
+	fake.recordInvocation("GetIsolationSegment", []interface{}{arg1, arg2, arg3})
+	fake.getIsolationSegmentMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *CFSpaceRepository) GetIsolationSegmentCallCount() int {
+	fake.getIsolationSegmentMutex.RLock()
+	defer fake.getIsolationSegmentMutex.RUnlock()
+	return len(fake.getIsolationSegmentArgsForCall)
+}
+
+func (fake *CFSpaceRepository) GetIsolationSegmentCalls(stub func(context.Context, authorization.Info, string) (repositories.SpaceIsolationRecord, error)) {
+	fake.getIsolationSegmentMutex.Lock()
+	defer fake.getIsolationSegmentMutex.Unlock()
+	fake.GetIsolationSegmentStub = stub
+}
+
+func (fake *CFSpaceRepository) GetIsolationSegmentArgsForCall(i int) (context.Context, authorization.Info, string) {
+	fake.getIsolationSegmentMutex.RLock()
+	defer fake.getIsolationSegmentMutex.RUnlock()
+	argsForCall := fake.getIsolationSegmentArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *CFSpaceRepository) GetIsolationSegmentReturns(result1 repositories.SpaceIsolationRecord, result2 error) {
+	fake.getIsolationSegmentMutex.Lock()
+	defer fake.getIsolationSegmentMutex.Unlock()
+	fake.GetIsolationSegmentStub = nil
+	fake.getIsolationSegmentReturns = struct {
+		result1 repositories.SpaceIsolationRecord
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *CFSpaceRepository) GetIsolationSegmentReturnsOnCall(i int, result1 repositories.SpaceIsolationRecord, result2 error) {
+	fake.getIsolationSegmentMutex.Lock()
+	defer fake.getIsolationSegmentMutex.Unlock()
+	fake.GetIsolationSegmentStub = nil
+	if fake.getIsolationSegmentReturnsOnCall == nil {
+		fake.getIsolationSegmentReturnsOnCall = make(map[int]struct {
+			result1 repositories.SpaceIsolationRecord
+			result2 error
+		})
+	}
+	fake.getIsolationSegmentReturnsOnCall[i] = struct {
+		result1 repositories.SpaceIsolationRecord
 		result2 error
 	}{result1, result2}
 }
@@ -668,6 +749,8 @@ func (fake *CFSpaceRepository) Invocations() map[string][][]interface{} {
 	defer fake.deleteSpaceMutex.RUnlock()
 	fake.getDeletedAtMutex.RLock()
 	defer fake.getDeletedAtMutex.RUnlock()
+	fake.getIsolationSegmentMutex.RLock()
+	defer fake.getIsolationSegmentMutex.RUnlock()
 	fake.getSpaceMutex.RLock()
 	defer fake.getSpaceMutex.RUnlock()
 	fake.listRunningSecurityGroupsMutex.RLock()
