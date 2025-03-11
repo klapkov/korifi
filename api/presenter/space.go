@@ -28,6 +28,11 @@ type SpaceLinks struct {
 	Organization *Link `json:"organization"`
 }
 
+type SpaceIsolationResponse struct {
+	Data  *string
+	Links SpaceLinks
+}
+
 func ForSpace(space repositories.SpaceRecord, apiBaseURL url.URL, includes ...include.Resource) SpaceResponse {
 	return SpaceResponse{
 		Name:      space.Name,
@@ -45,6 +50,21 @@ func ForSpace(space repositories.SpaceRecord, apiBaseURL url.URL, includes ...in
 			},
 			Organization: &Link{
 				HRef: buildURL(apiBaseURL).appendPath(orgsBase, space.OrganizationGUID).build(),
+			},
+		},
+	}
+}
+
+func ForSpaceIsolation(isolation repositories.SpaceIsolationRecord, apiBaseURL url.URL, includes ...include.Resource) SpaceIsolationResponse {
+	var spaceGUID *string
+	if isolation.Data != "" {
+		spaceGUID = tools.PtrTo(isolation.Data)
+	}
+	return SpaceIsolationResponse{
+		Data: spaceGUID,
+		Links: SpaceLinks{
+			Self: &Link{
+				HRef: buildURL(apiBaseURL).appendPath(spacesBase, isolation.GUID, "/relationships/isolation_segment").build(),
 			},
 		},
 	}
