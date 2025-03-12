@@ -27,9 +27,8 @@ type DomainResponse struct {
 }
 
 type DomainLinks struct {
-	Self              Link  `json:"self"`
-	RouteReservations Link  `json:"route_reservations"`
-	RouterGroup       *Link `json:"router_group"`
+	Self              Link `json:"self"`
+	RouteReservations Link `json:"route_reservations"`
 }
 
 type DomainRelationships struct {
@@ -74,7 +73,6 @@ func ForDomain(responseDomain repositories.DomainRecord, baseURL url.URL, includ
 			RouteReservations: Link{
 				HRef: buildURL(baseURL).appendPath(domainsBase, responseDomain.GUID, "route_reservations").build(),
 			},
-			RouterGroup: nil,
 		},
 	}
 }
