@@ -194,7 +194,10 @@ var _ = Describe("Org", func() {
 	})
 
 	Describe("Updating Orgs", func() {
-		var requestBody string
+		var (
+			requestBody string
+			newOrgName  *string
+		)
 
 		JustBeforeEach(func() {
 			request, err := http.NewRequestWithContext(ctx, http.MethodPatch, "/v3/organizations/org-guid", strings.NewReader(requestBody))
@@ -208,7 +211,7 @@ var _ = Describe("Org", func() {
 				Name: "test-org",
 			}, nil)
 
-			newOrgName := tools.PtrTo("new-org-name")
+			newOrgName = tools.PtrTo("new-org-name")
 			orgRepo.PatchOrgReturns(repositories.OrgRecord{
 				GUID: "org-guid",
 				Name: *newOrgName,
