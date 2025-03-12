@@ -14,7 +14,6 @@ import (
 	"code.cloudfoundry.org/korifi/tools"
 	"code.cloudfoundry.org/korifi/tools/k8s"
 
-	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -479,12 +478,12 @@ var _ = Describe("OrgRepository", func() {
 		)
 
 		BeforeEach(func() {
-			displayName = uuid.NewString()
+			displayName = prefixedGUID("org-name")
 			cfOrg = createOrgWithCleanup(ctx, displayName)
 			orgGUID = cfOrg.Name
 			labelsPatch = nil
 			annotationsPatch = nil
-			orgNewName = tools.PtrTo(uuid.NewString())
+			orgNewName = tools.PtrTo("new-org-name")
 		})
 
 		JustBeforeEach(func() {
@@ -552,7 +551,7 @@ var _ = Describe("OrgRepository", func() {
 							"key-two": "value-two",
 						},
 					))
-					Expect(updatedCFOrg.Spec.DisplayName).To(Equal(*orgNewName))
+					Expect(updatedCFOrg.Spec.DisplayName).To(Equal("new-org-name"))
 				})
 			})
 
@@ -599,7 +598,7 @@ var _ = Describe("OrgRepository", func() {
 							"key-two":        "value-two",
 						},
 					))
-					Expect(orgRecord.Name).To(Equal(*orgNewName))
+					Expect(orgRecord.Name).To(Equal("new-org-name"))
 				})
 
 				It("sets the k8s CFOrg resource", func() {
@@ -620,7 +619,7 @@ var _ = Describe("OrgRepository", func() {
 							"key-two":        "value-two",
 						},
 					))
-					Expect(orgRecord.Name).To(Equal(*orgNewName))
+					Expect(orgRecord.Name).To(Equal("new-org-name"))
 				})
 			})
 
