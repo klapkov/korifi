@@ -107,7 +107,7 @@ var _ = Describe("Org", func() {
 			It("returns an unprocessable entity error", func() {
 				expectUnprocessableEntityError(
 					validatorErr,
-					"name cannot be blank",
+					"Name cannot be blank",
 				)
 			})
 		})
