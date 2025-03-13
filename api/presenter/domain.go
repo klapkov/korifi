@@ -26,6 +26,14 @@ type DomainResponse struct {
 	Links         DomainLinks         `json:"links"`
 }
 
+type SharedOrgResponse struct {
+	Data []OrgData `json:"data"`
+}
+
+type OrgData struct {
+	GUID string `json:"guid"`
+}
+
 type DomainLinks struct {
 	Self              Link  `json:"self"`
 	RouteReservations Link  `json:"route_reservations"`
@@ -77,4 +85,13 @@ func ForDomain(responseDomain repositories.DomainRecord, baseURL url.URL, includ
 			RouterGroup: nil,
 		},
 	}
+}
+
+func ForDomainShareOrg(orgs map[string]struct{}, baseURL url.URL) SharedOrgResponse {
+	resp := SharedOrgResponse{}
+	resp.Data = make([]OrgData, 0, len(orgs))
+	for guid := range orgs {
+		resp.Data = append(resp.Data, OrgData{GUID: guid})
+	}
+	return resp
 }
