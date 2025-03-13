@@ -52,6 +52,14 @@ func (r DomainRecord) GetResourceType() string {
 	return DomainResourceType
 }
 
+type ShareDomainRecord struct {
+	Data []SharedOrg
+}
+
+type SharedOrg struct {
+	GUID string `json:"guid"`
+}
+
 type CreateDomainMessage struct {
 	Name     string
 	Metadata Metadata
@@ -169,6 +177,10 @@ func (r *DomainRepo) DeleteDomain(ctx context.Context, authInfo authorization.In
 func (r *DomainRepo) GetDeletedAt(ctx context.Context, authInfo authorization.Info, domainGUID string) (*time.Time, error) {
 	domain, err := r.GetDomain(ctx, authInfo, domainGUID)
 	return domain.DeletedAt, err
+}
+
+func (r *DomainRepo) ShareDomain(ctx context.Context, authInfo authorization.Info, orgGUIDs map[string]struct{}) (map[string]struct{}, error) {
+	return orgGUIDs, nil
 }
 
 func cfDomainToDomainRecord(cfDomain korifiv1alpha1.CFDomain) DomainRecord {
