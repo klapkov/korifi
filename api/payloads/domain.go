@@ -81,3 +81,25 @@ func (d *DomainList) DecodeFromURLValues(values url.Values) error {
 	d.Names = values.Get("names")
 	return nil
 }
+
+type DomainShareOrgs struct {
+	Data []DomainOrg
+}
+
+func (d DomainShareOrgs) ToMessage() map[string]struct{} {
+	res := map[string]struct{}{}
+	for _, org := range d.Data {
+		res[org.GUID] = struct{}{}
+	}
+	return res
+}
+
+type DomainOrg struct {
+	GUID string
+}
+
+func (d DomainShareOrgs) Validate() error {
+	return validation.ValidateStruct(&d,
+		validation.Field(&d.Data, validation.Length(1, 0)),
+	)
+}
