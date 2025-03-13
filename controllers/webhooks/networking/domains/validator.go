@@ -79,21 +79,21 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 		}.ExportJSONError()
 	}
 
-	isOverlapping, err := v.domainIsOverlapping(ctx, domain.Spec.Name)
-	if err != nil {
-		log.Info("error checking for overlapping domain", "reason", err)
-		return nil, validationwebhook.ValidationError{
-			Type:    validationwebhook.UnknownErrorType,
-			Message: validationwebhook.UnknownErrorMessage,
-		}.ExportJSONError()
-	}
+	// isOverlapping, err := v.domainIsOverlapping(ctx, domain.Spec.Name)
+	// if err != nil {
+	// 	log.Info("error checking for overlapping domain", "reason", err)
+	// 	return nil, validationwebhook.ValidationError{
+	// 		Type:    validationwebhook.UnknownErrorType,
+	// 		Message: validationwebhook.UnknownErrorMessage,
+	// 	}.ExportJSONError()
+	// }
 
-	if isOverlapping {
-		return nil, validationwebhook.ValidationError{
-			Type:    DuplicateDomainErrorType,
-			Message: "Overlapping domain exists",
-		}.ExportJSONError()
-	}
+	// if isOverlapping {
+	// 	return nil, validationwebhook.ValidationError{
+	// 		Type:    DuplicateDomainErrorType,
+	// 		Message: "Overlapping domain exists",
+	// 	}.ExportJSONError()
+	// }
 
 	return nil, nil
 }
