@@ -69,6 +69,21 @@ type CFDomainRepository struct {
 		result1 []repositories.DomainRecord
 		result2 error
 	}
+	ShareDomainStub        func(context.Context, authorization.Info, map[string]struct{}) (map[string]struct{}, error)
+	shareDomainMutex       sync.RWMutex
+	shareDomainArgsForCall []struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 map[string]struct{}
+	}
+	shareDomainReturns struct {
+		result1 map[string]struct{}
+		result2 error
+	}
+	shareDomainReturnsOnCall map[int]struct {
+		result1 map[string]struct{}
+		result2 error
+	}
 	UpdateDomainStub        func(context.Context, authorization.Info, repositories.UpdateDomainMessage) (repositories.DomainRecord, error)
 	updateDomainMutex       sync.RWMutex
 	updateDomainArgsForCall []struct {
@@ -349,6 +364,72 @@ func (fake *CFDomainRepository) ListDomainsReturnsOnCall(i int, result1 []reposi
 	}{result1, result2}
 }
 
+func (fake *CFDomainRepository) ShareDomain(arg1 context.Context, arg2 authorization.Info, arg3 map[string]struct{}) (map[string]struct{}, error) {
+	fake.shareDomainMutex.Lock()
+	ret, specificReturn := fake.shareDomainReturnsOnCall[len(fake.shareDomainArgsForCall)]
+	fake.shareDomainArgsForCall = append(fake.shareDomainArgsForCall, struct {
+		arg1 context.Context
+		arg2 authorization.Info
+		arg3 map[string]struct{}
+	}{arg1, arg2, arg3})
+	stub := fake.ShareDomainStub
+	fakeReturns := fake.shareDomainReturns
+	fake.recordInvocation("ShareDomain", []interface{}{arg1, arg2, arg3})
+	fake.shareDomainMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *CFDomainRepository) ShareDomainCallCount() int {
+	fake.shareDomainMutex.RLock()
+	defer fake.shareDomainMutex.RUnlock()
+	return len(fake.shareDomainArgsForCall)
+}
+
+func (fake *CFDomainRepository) ShareDomainCalls(stub func(context.Context, authorization.Info, map[string]struct{}) (map[string]struct{}, error)) {
+	fake.shareDomainMutex.Lock()
+	defer fake.shareDomainMutex.Unlock()
+	fake.ShareDomainStub = stub
+}
+
+func (fake *CFDomainRepository) ShareDomainArgsForCall(i int) (context.Context, authorization.Info, map[string]struct{}) {
+	fake.shareDomainMutex.RLock()
+	defer fake.shareDomainMutex.RUnlock()
+	argsForCall := fake.shareDomainArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *CFDomainRepository) ShareDomainReturns(result1 map[string]struct{}, result2 error) {
+	fake.shareDomainMutex.Lock()
+	defer fake.shareDomainMutex.Unlock()
+	fake.ShareDomainStub = nil
+	fake.shareDomainReturns = struct {
+		result1 map[string]struct{}
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *CFDomainRepository) ShareDomainReturnsOnCall(i int, result1 map[string]struct{}, result2 error) {
+	fake.shareDomainMutex.Lock()
+	defer fake.shareDomainMutex.Unlock()
+	fake.ShareDomainStub = nil
+	if fake.shareDomainReturnsOnCall == nil {
+		fake.shareDomainReturnsOnCall = make(map[int]struct {
+			result1 map[string]struct{}
+			result2 error
+		})
+	}
+	fake.shareDomainReturnsOnCall[i] = struct {
+		result1 map[string]struct{}
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *CFDomainRepository) UpdateDomain(arg1 context.Context, arg2 authorization.Info, arg3 repositories.UpdateDomainMessage) (repositories.DomainRecord, error) {
 	fake.updateDomainMutex.Lock()
 	ret, specificReturn := fake.updateDomainReturnsOnCall[len(fake.updateDomainArgsForCall)]
@@ -426,6 +507,8 @@ func (fake *CFDomainRepository) Invocations() map[string][][]interface{} {
 	defer fake.getDomainMutex.RUnlock()
 	fake.listDomainsMutex.RLock()
 	defer fake.listDomainsMutex.RUnlock()
+	fake.shareDomainMutex.RLock()
+	defer fake.shareDomainMutex.RUnlock()
 	fake.updateDomainMutex.RLock()
 	defer fake.updateDomainMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
