@@ -20,7 +20,7 @@ type RootResponse struct {
 	CFOnK8s bool                `json:"cf_on_k8s"`
 }
 
-const V3APIVersion = "3.117.0+cf-k8s"
+const V3APIVersion = "3.183.0+cf-k8s"
 
 func ForRoot(baseURL url.URL, uaaConfig config.UAA, logCacheURL url.URL) RootResponse {
 	rootResponse := RootResponse{
