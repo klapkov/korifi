@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	DomainsPath = "/v3/domains"
-	DomainPath  = "/v3/domains/{guid}"
+	DomainsPath          = "/v3/domains"
+	DomainPath           = "/v3/domains/{guid}"
+	DomainsShareOrgsPath = "/v3/domains/{guid}/relationships/shared_organizations"
 )
 
 //counterfeiter:generate -o fake -fake-name CFDomainRepository . CFDomainRepository
@@ -29,6 +30,7 @@ type CFDomainRepository interface {
 	UpdateDomain(context.Context, authorization.Info, repositories.UpdateDomainMessage) (repositories.DomainRecord, error)
 	ListDomains(context.Context, authorization.Info, repositories.ListDomainsMessage) ([]repositories.DomainRecord, error)
 	DeleteDomain(context.Context, authorization.Info, string) error
+	ShareDomain(ctx context.Context, authInfo authorization.Info, orgGUIDs map[string]struct{}) (map[string]struct{}, error)
 }
 
 type Domain struct {
@@ -144,6 +146,24 @@ func (h *Domain) delete(r *http.Request) (*routing.Response, error) {
 	), nil
 }
 
+func (h *Domain) getSharedOrgs(r *http.Request) (*routing.Response, error) {
+	authInfo, _ := authorization.InfoFromContext(r.Context())
+	logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.domain.get")
+
+	var payload payloads.DomainShareOrgs
+	if err := h.requestValidator.DecodeAndValidateJSONPayload(r, &payload); err != nil {
+		return nil, apierrors.LogAndReturn(logger, err, "failed to decode payload")
+	}
+
+	message := payload.ToMessage()
+	orgs, err := h.domainRepo.ShareDomain(r.Context(), authInfo, message)
+	if err != nil {
+		return nil, apierrors.LogAndReturn(logger, apierrors.ForbiddenAsNotFound(err), "Error getting domain in repository")
+	}
+
+	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForDomainShareOrg(orgs, h.serverURL)), nil
+}
+
 func (h *Domain) UnauthenticatedRoutes() []routing.Route {
 	return nil
 }
@@ -155,5 +175,6 @@ func (h *Domain) AuthenticatedRoutes() []routing.Route {
 		{Method: "PATCH", Pattern: DomainPath, Handler: h.update},
 		{Method: "GET", Pattern: DomainsPath, Handler: h.list},
 		{Method: "DELETE", Pattern: DomainPath, Handler: h.delete},
+		{Method: "POST", Pattern: DomainsShareOrgsPath, Handler: h.getSharedOrgs},
 	}
 }
