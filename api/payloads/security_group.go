@@ -2,9 +2,11 @@ package payloads
 
 import (
 	"fmt"
+	"net"
 	"net/url"
-	"regexp"
 	"slices"
+	"strconv"
+	"strings"
 
 	"code.cloudfoundry.org/korifi/api/payloads/parse"
 	"code.cloudfoundry.org/korifi/api/repositories"
@@ -19,10 +21,10 @@ type SecurityGroupRelationships struct {
 }
 
 type SecurityGroupCreate struct {
-	DisplayName     string                             `json:"name"`
-	Rules           []korifiv1alpha1.SecurityGroupRule `json:"rules"`
-	GloballyEnabled korifiv1alpha1.GloballyEnabled     `json:"globally_enabled"`
-	Relationships   SecurityGroupRelationships         `json:"relationships"`
+	DisplayName     string                                `json:"name"`
+	Rules           []korifiv1alpha1.SecurityGroupRule    `json:"rules"`
+	GloballyEnabled korifiv1alpha1.SecurityGroupWorkloads `json:"globally_enabled"`
+	Relationships   SecurityGroupRelationships            `json:"relationships"`
 }
 
 func (c SecurityGroupCreate) Validate() error {
@@ -58,8 +60,8 @@ func (c SecurityGroupCreate) ToMessage() repositories.CreateSecurityGroupMessage
 type SecurityGroupList struct {
 	GUIDs                  string `json:"guids"`
 	Names                  string `json:"names"`
-	GloballyEnabledStaging *bool  `json:"globally_enabled_staging"`
 	GloballyEnabledRunning *bool  `json:"globally_enabled_running"`
+	GloballyEnabledStaging *bool  `json:"globally_enabled_staging"`
 	RunningSpaceGUIDs      string `json:"running_space_guids"`
 	StagingSpaceGUIDs      string `json:"staging_space_guids"`
 }
@@ -171,6 +173,7 @@ func (b SecurityGroupBindStaging) ToMessage(guid string) repositories.BindStagin
 	}
 }
 
+// validateSecurityGroupRules validates a slice of SecurityGroupRule
 func validateSecurityGroupRules(value any) error {
 	rules := value.([]korifiv1alpha1.SecurityGroupRule)
 
@@ -186,7 +189,7 @@ func validateSecurityGroupRules(value any) error {
 		}
 
 		if (rule.Protocol == korifiv1alpha1.ProtocolTCP || rule.Protocol == korifiv1alpha1.ProtocolUDP) && len(rule.Ports) == 0 {
-			return fmt.Errorf("Rules[%d]: ports are required for protocols of type TCP and UDP, ports must be a valid single port, comma separated list of ports, or range or ports, formatted as a string", i)
+			return fmt.Errorf("Rules[%d]: ports are required for protocols of type TCP and UDP, ports must be a valid single port, comma separated list of ports, or range of ports, formatted as a string", i)
 		}
 
 		if err := validateRuleDestination(rule.Destination); err != nil {
@@ -201,41 +204,66 @@ func validateSecurityGroupRules(value any) error {
 	return nil
 }
 
+// validateRuleDestination validates that the destination is a valid IPv4 address, CIDR, or IP range
 func validateRuleDestination(destination string) error {
-	destIPRegex := regexp.MustCompile(
-		`^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.){3}(25[0-5]|(2[0-4]|1\d|[1-9]|)\d)$`,
-	)
-	cidrRegex := regexp.MustCompile(
-		`^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){2}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\/([1-9]|[12][0-9]|3[0-2]))$`,
-	)
-	rangeRegex := regexp.MustCompile(
-		`^(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){2}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])-(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){2}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])$`,
-	)
-
-	if destIPRegex.MatchString(destination) || cidrRegex.MatchString(destination) || rangeRegex.MatchString(destination) {
+	// Check for single IPv4 address
+	if ip := net.ParseIP(destination); ip != nil && ip.To4() != nil {
 		return nil
 	}
+
+	// Check for CIDR notation
+	if ip, ipnet, err := net.ParseCIDR(destination); err == nil && ip.To4() != nil {
+		ones, _ := ipnet.Mask.Size()
+		if ones >= 1 && ones <= 32 {
+			return nil
+		}
+	}
+
+	// Check for IP range
+	parts := strings.Split(destination, "-")
+	if len(parts) == 2 {
+		ip1 := net.ParseIP(parts[0])
+		ip2 := net.ParseIP(parts[1])
+		if ip1 != nil && ip1.To4() != nil && ip2 != nil && ip2.To4() != nil {
+			return nil
+		}
+	}
+
 	return fmt.Errorf("The Destination: %s is not in a valid format", destination)
 }
 
+// isValidPort checks if a string represents a valid port number (1-65535, no leading zeros)
+func isValidPort(portStr string) bool {
+	if len(portStr) == 0 || portStr[0] == '0' {
+		return false
+	}
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		return false
+	}
+	return port >= 1 && port <= 65535
+}
+
+// validateRulePorts validates that the ports string is a valid single port, comma-separated list, or range
 func validateRulePorts(ports string) error {
 	if len(ports) == 0 {
 		return nil
 	}
 
-	singlePortRegex := regexp.MustCompile(
-		`^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
-	)
-
-	multiplePortRegex := regexp.MustCompile(
-		`^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])(,([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5]))*$`,
-	)
-
-	rangeRegex := regexp.MustCompile(
-		`^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])-([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$`,
-	)
-
-	if singlePortRegex.MatchString(ports) || multiplePortRegex.MatchString(ports) || rangeRegex.MatchString(ports) {
+	if strings.Count(ports, "-") == 1 && !strings.Contains(ports, ",") {
+		// Port range (e.g., "80-90")
+		parts := strings.Split(ports, "-")
+		if len(parts) == 2 && isValidPort(parts[0]) && isValidPort(parts[1]) {
+			return nil
+		}
+	} else {
+		// Single port or comma-separated list (e.g., "80" or "80,443,8080")
+		parts := strings.Split(ports, ",")
+		for _, part := range parts {
+			if !isValidPort(part) {
+				return fmt.Errorf("invalid port: %s", part)
+			}
+		}
 		return nil
 	}
 

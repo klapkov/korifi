@@ -15,14 +15,14 @@ import (
 const securityGroupBase = "/v3/security_groups"
 
 type SecurityGroupResponse struct {
-	GUID            string                              `json:"guid"`
-	CreatedAt       string                              `json:"created_at"`
-	UpdatedAt       string                              `json:"updated_at"`
-	Name            string                              `json:"name"`
-	GloballyEnabled korifiv1alpha1.GloballyEnabled      `json:"globally_enabled"`
-	Rules           []korifiv1alpha1.SecurityGroupRule  `json:"rules"`
-	Relationships   payloads.SecurityGroupRelationships `json:"relationships"`
-	Links           SecurityGroupLinks                  `json:"links"`
+	GUID            string                                `json:"guid"`
+	CreatedAt       string                                `json:"created_at"`
+	UpdatedAt       string                                `json:"updated_at"`
+	Name            string                                `json:"name"`
+	GloballyEnabled korifiv1alpha1.SecurityGroupWorkloads `json:"globally_enabled"`
+	Rules           []korifiv1alpha1.SecurityGroupRule    `json:"rules"`
+	Relationships   payloads.SecurityGroupRelationships   `json:"relationships"`
+	Links           SecurityGroupLinks                    `json:"links"`
 }
 
 type SecurityGroupSpacesResponse struct {

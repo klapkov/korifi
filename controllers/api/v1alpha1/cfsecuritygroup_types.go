@@ -30,11 +30,6 @@ type SecurityGroupRule struct {
 	Log         bool   `json:"log,omitempty"`
 }
 
-type GloballyEnabled struct {
-	Running bool `json:"running"`
-	Staging bool `json:"staging"`
-}
-
 type GloballyEnabledUpdate struct {
 	Running *bool `json:"running,omitempty"`
 	Staging *bool `json:"staging,omitempty"`
@@ -51,7 +46,7 @@ type CFSecurityGroupSpec struct {
 	// //+kubebuilder:validation:Optional
 	Spaces map[string]SecurityGroupWorkloads `json:"spaces"`
 	// //+kubebuilder:validation:Optional
-	GloballyEnabled GloballyEnabled `json:"globally_enabled"`
+	GloballyEnabled SecurityGroupWorkloads `json:"globally_enabled"`
 }
 
 type CFSecurityGroupStatus struct {

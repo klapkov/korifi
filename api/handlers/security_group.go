@@ -30,6 +30,7 @@ type SecurityGroup struct {
 	requestValidator  RequestValidator
 }
 
+//counterfeiter:generate -o fake -fake-name CFSecurityGroupRepository . CFSecurityGroupRepository
 type CFSecurityGroupRepository interface {
 	GetSecurityGroup(context.Context, authorization.Info, string) (repositories.SecurityGroupRecord, error)
 	CreateSecurityGroup(context.Context, authorization.Info, repositories.CreateSecurityGroupMessage) (repositories.SecurityGroupRecord, error)
@@ -81,6 +82,14 @@ func (h *SecurityGroup) create(r *http.Request) (*routing.Response, error) {
 	securityGroup, err := h.securityGroupRepo.CreateSecurityGroup(r.Context(), authInfo, payload.ToMessage())
 	if err != nil {
 		return nil, apierrors.LogAndReturn(logger, err, "failed to create security group")
+	}
+
+	_, err = h.spaceRepo.ListSpaces(r.Context(), authInfo, repositories.ListSpacesMessage{
+		GUIDs: append(payload.Relationships.RunningSpaces.CollectGUIDs(),
+			payload.Relationships.StagingSpaces.CollectGUIDs()...),
+	})
+	if err != nil {
+		return nil, apierrors.LogAndReturn(logger, err, "failed to create security group, space  does not exist")
 	}
 
 	return routing.NewResponse(http.StatusCreated).WithBody(presenter.ForSecurityGroup(securityGroup, h.serverURL)), nil

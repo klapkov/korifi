@@ -329,7 +329,7 @@ func buildNetworkPolicyPorts(rule korifiv1alpha1.SecurityGroupRule) ([]v1.Networ
 	}
 
 	for _, portStr := range strings.Split(rule.Ports, ",") {
-		port, err := portStringToInt(portStr)
+		port, err := portStringToInt32(portStr)
 		if err != nil {
 			return nil, err
 		}
@@ -340,7 +340,7 @@ func buildNetworkPolicyPorts(rule korifiv1alpha1.SecurityGroupRule) ([]v1.Networ
 
 		ports = append(ports, v1.NetworkPolicyPort{
 			Protocol: getProtocol(rule.Protocol),
-			Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: int32(port)},
+			Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: port},
 		})
 	}
 
@@ -353,34 +353,33 @@ func parseRangePorts(ports, protocol string) (v1.NetworkPolicyPort, error) {
 		return v1.NetworkPolicyPort{}, fmt.Errorf("invalid port range format: %s", ports)
 	}
 
-	start, err := portStringToInt(rangePorts[0])
+	start, err := portStringToInt32(rangePorts[0])
 	if err != nil {
 		return v1.NetworkPolicyPort{}, err
 	}
 
-	end, err := portStringToInt(rangePorts[1])
+	end, err := portStringToInt32(rangePorts[1])
 	if err != nil {
 		return v1.NetworkPolicyPort{}, err
-	}
-	//TODO: Check if needed
-	if start < 1 || end > 65535 || start > end {
-		return v1.NetworkPolicyPort{}, fmt.Errorf("invalid port range %d-%d (must be 1-65535 and start <= end)", start, end)
 	}
 
 	return v1.NetworkPolicyPort{
 		Protocol: getProtocol(protocol),
-		Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: int32(start)},
-		EndPort:  tools.PtrTo(int32(end)),
+		Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: start},
+		EndPort:  tools.PtrTo(end),
 	}, nil
 }
 
-func portStringToInt(port string) (int, error) {
-	p, err := strconv.Atoi(strings.TrimSpace(port))
-	if err != nil {
-		return 0, fmt.Errorf("invalid port %s: %w", port, err)
+func portStringToInt32(port string) (int32, error) {
+	pStr := strings.TrimSpace(port)
+	if pStr == "" {
+		return 0, fmt.Errorf("port value cannot be empty")
 	}
-
-	return p, nil
+	p, err := strconv.ParseInt(pStr, 10, 32)
+	if err != nil {
+		return 0, fmt.Errorf("invalid port %s: %w", pStr, err)
+	}
+	return int32(p), nil
 }
 
 func buildNetworkPolicyPeer(rule korifiv1alpha1.SecurityGroupRule) ([]v1.NetworkPolicyPeer, error) {

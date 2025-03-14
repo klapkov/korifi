@@ -21,23 +21,17 @@ import (
 const SecurityGroupResourceType = "Security Group"
 
 type SecurityGroupRepo struct {
-	userClientFactory    authorization.UserClientFactory
-	rootNamespace        string
-	namespacePermissions *authorization.NamespacePermissions
-	namespaceRetriever   NamespaceRetriever
+	userClientFactory authorization.UserClientFactory
+	rootNamespace     string
 }
 
 func NewSecurityGroupRepo(
 	userClientFactory authorization.UserClientFactory,
 	rootNamespace string,
-	namespacePermissions *authorization.NamespacePermissions,
-	namespaceRetriever NamespaceRetriever,
 ) *SecurityGroupRepo {
 	return &SecurityGroupRepo{
-		userClientFactory:    userClientFactory,
-		rootNamespace:        rootNamespace,
-		namespacePermissions: namespacePermissions,
-		namespaceRetriever:   namespaceRetriever,
+		userClientFactory: userClientFactory,
+		rootNamespace:     rootNamespace,
 	}
 }
 
@@ -45,7 +39,7 @@ type CreateSecurityGroupMessage struct {
 	DisplayName     string
 	Rules           []korifiv1alpha1.SecurityGroupRule
 	Spaces          map[string]korifiv1alpha1.SecurityGroupWorkloads
-	GloballyEnabled korifiv1alpha1.GloballyEnabled
+	GloballyEnabled korifiv1alpha1.SecurityGroupWorkloads
 }
 
 type ListSecurityGroupMessage struct {
@@ -165,7 +159,7 @@ type SecurityGroupRecord struct {
 	DeletedAt       *time.Time
 	Name            string
 	Rules           []korifiv1alpha1.SecurityGroupRule
-	GloballyEnabled korifiv1alpha1.GloballyEnabled
+	GloballyEnabled korifiv1alpha1.SecurityGroupWorkloads
 	RunningSpaces   []string
 	StagingSpaces   []string
 }

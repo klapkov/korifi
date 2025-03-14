@@ -44,6 +44,7 @@ spec:
               displayName:
                 type: string
               globally_enabled:
+                description: //+kubebuilder:validation:Optional
                 properties:
                   running:
                     type: boolean
