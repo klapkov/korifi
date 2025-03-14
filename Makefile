@@ -44,13 +44,10 @@ fmt: bin/gofumpt bin/shfmt
 vet: ## Run go vet against code.
 	go vet ./...
 
-lint: fmt vet gosec staticcheck golangci-lint
+lint: fmt vet gosec golangci-lint
 
 gosec: bin/gosec
 	gosec --exclude=G101,G304,G401,G404,G505 --exclude-dir=tests ./...
-
-staticcheck: bin/staticcheck
-	staticcheck ./...
 
 golangci-lint: bin/golangci-lint
 	golangci-lint run
@@ -92,9 +89,6 @@ bin/vendir:
 
 bin/gosec:
 	go install github.com/securego/gosec/v2/cmd/gosec@latest
-
-bin/staticcheck:
-	go run honnef.co/go/tools/cmd/staticcheck@latest ./...
 
 bin/golangci-lint:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest

@@ -13,7 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = FDescribe("SecurityGroup", func() {
+var _ = Describe("SecurityGroup", func() {
 	var (
 		baseURL *url.URL
 		output  []byte

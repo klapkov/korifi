@@ -20,7 +20,7 @@ var _ = Describe("SecurityGroupCreate", func() {
 		securityGroupCreate = new(payloads.SecurityGroupCreate)
 	})
 
-	FDescribe("Validation", func() {
+	Describe("Validation", func() {
 		BeforeEach(func() {
 			createPayload = payloads.SecurityGroupCreate{
 				DisplayName: "test-security-group",

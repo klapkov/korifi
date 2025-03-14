@@ -23,7 +23,7 @@ var _ = Describe("SecurityGroupRepo", func() {
 		space = createSpaceWithCleanup(ctx, org.Name, prefixedGUID("space"))
 	})
 
-	FDescribe("CreateSecurityGroup", func() {
+	Describe("CreateSecurityGroup", func() {
 		var (
 			securityGroupRecord repositories.SecurityGroupRecord
 			createErr           error
