@@ -157,3 +157,5 @@ experimental:
     enabled: false
     url: ""
     trustInsecureLogCache: false
+  securityGroups: 
+    enabled: false

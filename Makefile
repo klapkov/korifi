@@ -94,7 +94,7 @@ bin/gosec:
 	go install github.com/securego/gosec/v2/cmd/gosec@latest
 
 bin/staticcheck:
-	go install honnef.co/go/tools/cmd/staticcheck@latest
+	go run honnef.co/go/tools/cmd/staticcheck@latest ./...
 
 bin/golangci-lint:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest

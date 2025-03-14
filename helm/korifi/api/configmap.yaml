@@ -63,6 +63,8 @@ data:
         enabled: {{ .Values.experimental.externalLogCache.enabled }}
         url: {{ .Values.experimental.externalLogCache.url }}
         trustInsecureLogCache: {{ .Values.experimental.externalLogCache.trustInsecureLogCache }}
+      securityGroups:
+        enabled: {{ .Values.experimental.securityGroups.enabled }}
   role_mappings_config.yaml: |
     roleMappings:
       admin:
