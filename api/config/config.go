@@ -56,9 +56,14 @@ type (
 		UAA              UAA             `yaml:"uaa"`
 		ExternalLogCache ExtenalLogCache `yaml:"externalLogCache"`
 		K8SClient        K8SClientConfig `yaml:"k8sClient"`
+		SecurityGroups   SecurityGroups  `yaml:"securityGroups"`
 	}
 
 	ManagedServices struct {
+		Enabled bool `yaml:"enabled"`
+	}
+
+	SecurityGroups struct {
 		Enabled bool `yaml:"enabled"`
 	}
 

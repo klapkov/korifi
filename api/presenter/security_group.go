@@ -6,8 +6,8 @@ import (
 
 	"code.cloudfoundry.org/korifi/api/payloads"
 	"code.cloudfoundry.org/korifi/api/repositories"
+	"code.cloudfoundry.org/korifi/api/repositories/include"
 	korifiv1alpha1 "code.cloudfoundry.org/korifi/controllers/api/v1alpha1"
-	"code.cloudfoundry.org/korifi/model"
 	"code.cloudfoundry.org/korifi/tools"
 	"github.com/BooleanCat/go-functional/v2/it"
 )
@@ -34,7 +34,7 @@ type SecurityGroupLinks struct {
 	Self Link `json:"self"`
 }
 
-func ForSecurityGroup(securityGroupRecord repositories.SecurityGroupRecord, baseURL url.URL, includes ...model.IncludedResource) SecurityGroupResponse {
+func ForSecurityGroup(securityGroupRecord repositories.SecurityGroupRecord, baseURL url.URL, includes ...include.Resource) SecurityGroupResponse {
 	return SecurityGroupResponse{
 		GUID:            securityGroupRecord.GUID,
 		CreatedAt:       tools.ZeroIfNil(formatTimestamp(&securityGroupRecord.CreatedAt)),

@@ -277,6 +277,10 @@ func main() {
 		routerBuilder.UseMiddleware(middleware.DisableManagedServices)
 	}
 
+	if !cfg.Experimental.SecurityGroups.Enabled {
+		routerBuilder.UseMiddleware(middleware.DisableSecurityGroups)
+	}
+
 	authInfoParser := authorization.NewInfoParser()
 	routerBuilder.UseAuthMiddleware(
 		middleware.Authentication(
