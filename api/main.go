@@ -347,6 +347,8 @@ func main() {
 			gaugesCollector,
 			instancesStateCollector,
 		),
+		handlers.NewFeatureFlag(*serverURL),
+		handlers.NewEnvVarGroup(*serverURL),
 		handlers.NewRoute(
 			*serverURL,
 			routeRepo,
