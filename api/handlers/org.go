@@ -21,10 +21,11 @@ import (
 )
 
 const (
-	OrgsPath             = "/v3/organizations"
-	OrgPath              = "/v3/organizations/{guid}"
-	OrgDomainsPath       = "/v3/organizations/{guid}/domains"
-	OrgDefaultDomainPath = "/v3/organizations/{guid}/domains/default"
+	OrgsPath                       = "/v3/organizations"
+	OrgPath                        = "/v3/organizations/{guid}"
+	OrgDomainsPath                 = "/v3/organizations/{guid}/domains"
+	OrgDefaultDomainPath           = "/v3/organizations/{guid}/domains/default"
+	OrgDefaultIsolationSegmentPath = "/v3/organizations/{guid}/relationships/default_isolation_segment"
 )
 
 //counterfeiter:generate -o fake -fake-name CFOrgRepository . CFOrgRepository
@@ -203,12 +204,24 @@ func (h *Org) get(r *http.Request) (*routing.Response, error) {
 	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForOrg(org, h.apiBaseURL)), nil
 }
 
+func (h *Org) getDefaultIsolationSegment(r *http.Request) (*routing.Response, error) {
+	orgGUID := routing.URLParam(r, "guid")
+	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForOrgDefaultIsolationSegment(orgGUID, h.apiBaseURL)), nil
+}
+
+func (h *Org) assignDefaultIsolationSegment(r *http.Request) (*routing.Response, error) {
+	orgGUID := routing.URLParam(r, "guid")
+	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForOrgDefaultIsolationSegment(orgGUID, h.apiBaseURL)), nil
+}
+
 func (h *Org) UnauthenticatedRoutes() []routing.Route {
 	return nil
 }
 
 func (h *Org) AuthenticatedRoutes() []routing.Route {
 	return []routing.Route{
+		{Method: "GET", Pattern: OrgDefaultIsolationSegmentPath, Handler: h.getDefaultIsolationSegment},
+		{Method: "PATCH", Pattern: OrgDefaultIsolationSegmentPath, Handler: h.assignDefaultIsolationSegment},
 		{Method: "GET", Pattern: OrgsPath, Handler: h.list},
 		{Method: "POST", Pattern: OrgsPath, Handler: h.create},
 		{Method: "DELETE", Pattern: OrgPath, Handler: h.delete},
