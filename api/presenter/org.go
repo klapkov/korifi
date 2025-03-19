@@ -25,6 +25,12 @@ type OrgResponse struct {
 	Links         OrgLinks                     `json:"links"`
 }
 
+type OrgDefaultIsolationSegmentPath struct {
+	IsolationSegment RelationshipData `json:"data"`
+	Self             *Link            `json:"self"`
+	Related          *Link            `json:"related"`
+}
+
 type OrgLinks struct {
 	Self          *Link `json:"self"`
 	Domains       *Link `json:"domains,omitempty"`
@@ -53,6 +59,20 @@ func ForOrg(org repositories.OrgRecord, apiBaseURL url.URL, includes ...include.
 			DefaultDomain: &Link{
 				HRef: buildURL(apiBaseURL).appendPath(orgsBase, org.GUID, "domains/default").build(),
 			},
+		},
+	}
+}
+
+func ForOrgDefaultIsolationSegment(org string, apiBaseURL url.URL) OrgDefaultIsolationSegmentPath {
+	return OrgDefaultIsolationSegmentPath{
+		IsolationSegment: RelationshipData{
+			GUID: "default-iso-segment",
+		},
+		Self: &Link{
+			HRef: buildURL(apiBaseURL).appendPath(orgsBase, org, "relationships/default_isolation_segment", "default-iso-segment").build(),
+		},
+		Related: &Link{
+			HRef: buildURL(apiBaseURL).appendPath("v3/isolation_segments", "default-iso-segment").build(),
 		},
 	}
 }
