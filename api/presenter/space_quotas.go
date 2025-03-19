@@ -8,16 +8,16 @@ import (
 )
 
 type SpaceQuotasResponse struct {
-	Name      string   `json:"name"`
-	CreatedAt string   `json:"created_at"`
-	UpdatedAt string   `json:"updated_at"`
-	GUID      string   `json:"guid"`
-	Links     OrgLinks `json:"links"`
+	Name      string     `json:"name"`
+	CreatedAt string     `json:"created_at"`
+	UpdatedAt string     `json:"updated_at"`
+	GUID      string     `json:"guid"`
+	Links     SpaceLinks `json:"links"`
 }
 
 type QuotaToSpaceResponse struct {
 	Data  []QuotaToSpace `json:"data"`
-	Links OrgLinks       `json:"links"`
+	Links SpaceLinks     `json:"links"`
 }
 
 type QuotaToSpace struct {
@@ -30,7 +30,7 @@ func ForSpaceQuota(space repositories.SpaceQuotaRecord, apiBaseURL url.URL, incl
 		GUID:      space.GUID,
 		CreatedAt: space.CreatedAt.String(),
 		UpdatedAt: space.CreatedAt.String(),
-		Links: OrgLinks{
+		Links: SpaceLinks{
 			Self: &Link{
 				HRef: buildURL(apiBaseURL).appendPath("/v3/space_quotas", space.GUID).build(),
 			},
@@ -38,18 +38,18 @@ func ForSpaceQuota(space repositories.SpaceQuotaRecord, apiBaseURL url.URL, incl
 	}
 }
 
-func ForQuotaToSpaces(orgs []repositories.SpaceData, apiBaseURL url.URL, includes ...include.Resource) QuotaToSpaceResponse {
+func ForQuotaToSpaces(spaces []repositories.SpaceData, apiBaseURL url.URL, includes ...include.Resource) QuotaToSpaceResponse {
 	resp := QuotaToSpaceResponse{
 		Data: []QuotaToSpace{},
-		Links: OrgLinks{
+		Links: SpaceLinks{
 			Self: &Link{
 				HRef: buildURL(apiBaseURL).appendPath("/v3/space_quotas", "quota-space-guid", "relationships/organizations").build(),
 			},
 		},
 	}
 
-	for _, org := range orgs {
-		resp.Data = append(resp.Data, QuotaToSpace{GUID: org.GUID})
+	for _, space := range spaces {
+		resp.Data = append(resp.Data, QuotaToSpace{GUID: space.GUID})
 	}
 
 	return resp
