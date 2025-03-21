@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 	"net/url"
-	"strings"
 
 	"code.cloudfoundry.org/korifi/api/presenter"
 	"code.cloudfoundry.org/korifi/api/routing"
@@ -40,12 +39,7 @@ func (h User) update(req *http.Request) (*routing.Response, error) {
 }
 
 func (h User) list(req *http.Request) (*routing.Response, error) {
-	usernames := req.URL.Query().Get("usernames")
-	users := []string{}
-	if len(usernames) > 0 {
-		users = strings.Split(usernames, ",")
-	}
-	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForList(presenter.ForUser, users, h.apiBaseURL, *req.URL)), nil
+	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForUsers(h.apiBaseURL)), nil
 }
 
 func (h User) delete(req *http.Request) (*routing.Response, error) {
