@@ -53,7 +53,7 @@ func ForApp(responseApp repositories.AppRecord, baseURL url.URL, includes ...inc
 			Type: responseApp.Lifecycle.Type,
 			Data: LifecycleData{
 				Buildpacks: emptySliceIfNil(responseApp.Lifecycle.Data.Buildpacks),
-				Stack:      responseApp.Lifecycle.Data.Stack,
+				Stack:      "cflinuxfs4",
 			},
 		},
 		Metadata: Metadata{
