@@ -68,7 +68,7 @@ func (r *SecurityGroupRepo) CreateSecurityGroup(ctx context.Context, authInfo au
 	}
 
 	if err = userClient.Create(ctx, cfSecurityGroup); err != nil {
-		return SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
+		return SecurityGroupRecord{}, fmt.Errorf("failed to create security group: %w", apierrors.FromK8sError(err, SecurityGroupResourceType))
 	}
 
 	return toSecurityGroupRecord(*cfSecurityGroup), nil
