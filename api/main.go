@@ -487,6 +487,18 @@ func main() {
 			spaceRepo,
 			requestValidator,
 		),
+		handlers.NewOrgQuotas(
+			*serverURL,
+			requestValidator,
+		),
+		handlers.NewSpaceQuotas(
+			*serverURL,
+			requestValidator,
+		),
+		handlers.NewIsolationSegments(
+			*serverURL,
+			requestValidator,
+		),
 	}
 
 	if !cfg.Experimental.ExternalLogCache.Enabled {
