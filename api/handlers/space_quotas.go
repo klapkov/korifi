@@ -49,22 +49,22 @@ func (h *SpaceQuotas) create(r *http.Request) (*routing.Response, error) {
 func (h *SpaceQuotas) get(r *http.Request) (*routing.Response, error) {
 	// authInfo, _ := authorization.InfoFromContext(r.Context())
 	// logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.space-quotas.get")
-	orgQuotaGUID := routing.URLParam(r, "guid")
-	orgQuotas := repositories.SpaceQuotaRecord{
-		GUID:      orgQuotaGUID,
+	spaceQuotaGUID := routing.URLParam(r, "guid")
+	spaceQuotas := repositories.SpaceQuotaRecord{
+		GUID:      spaceQuotaGUID,
 		Name:      "org-quota-name-1",
 		CreatedAt: time.Date(2025, time.January, 1, 12, 0, 0, 0, time.UTC),
 		UpdatedAt: time.Date(2025, time.February, 1, 12, 0, 0, 0, time.UTC),
 	}
 
-	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForSpaceQuota(orgQuotas, h.apiBaseURL)), nil
+	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForSpaceQuota(spaceQuotas, h.apiBaseURL)), nil
 }
 
 func (h *SpaceQuotas) list(r *http.Request) (*routing.Response, error) {
 	// authInfo, _ := authorization.InfoFromContext(r.Context())
 	// logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.space-quotas.list")
 
-	orgQuotas := []repositories.SpaceQuotaRecord{
+	spaceQuotas := []repositories.SpaceQuotaRecord{
 		{
 			GUID:      uuid.NewString(),
 			Name:      "org-quota-name-1",
@@ -79,22 +79,22 @@ func (h *SpaceQuotas) list(r *http.Request) (*routing.Response, error) {
 		},
 	}
 
-	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForList(presenter.ForSpaceQuota, orgQuotas, h.apiBaseURL, *r.URL)), nil
+	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForList(presenter.ForSpaceQuota, spaceQuotas, h.apiBaseURL, *r.URL)), nil
 }
 
 func (h *SpaceQuotas) update(r *http.Request) (*routing.Response, error) {
 	// authInfo, _ := authorization.InfoFromContext(r.Context())
 	// logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.space-quotas.update")
 
-	orgQuotaGUID := routing.URLParam(r, "guid")
-	orgQuotas := repositories.SpaceQuotaRecord{
-		GUID:      orgQuotaGUID,
-		Name:      "org-quota-name-1",
+	spaceQuotaGUID := routing.URLParam(r, "guid")
+	spaceQuotas := repositories.SpaceQuotaRecord{
+		GUID:      spaceQuotaGUID,
+		Name:      "space-quota-name-1",
 		CreatedAt: time.Date(2025, time.January, 1, 12, 0, 0, 0, time.UTC),
 		UpdatedAt: time.Date(2025, time.February, 1, 12, 0, 0, 0, time.UTC),
 	}
 
-	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForSpaceQuota(orgQuotas, h.apiBaseURL)), nil
+	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForSpaceQuota(spaceQuotas, h.apiBaseURL)), nil
 }
 
 func (h *SpaceQuotas) delete(r *http.Request) (*routing.Response, error) {
@@ -102,8 +102,7 @@ func (h *SpaceQuotas) delete(r *http.Request) (*routing.Response, error) {
 	// logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.space-quotas.delete")
 
 	quotaGUID := routing.URLParam(r, "guid")
-
-	return routing.NewResponse(http.StatusAccepted).WithHeader("Location", presenter.JobURLForRedirects(quotaGUID, presenter.OrgDeleteOperation, h.apiBaseURL)), nil
+	return routing.NewResponse(http.StatusAccepted).WithHeader("Location", presenter.JobURLForRedirects(quotaGUID, presenter.SpaceDeleteOperation, h.apiBaseURL)), nil
 }
 
 func (h *SpaceQuotas) applyQuota(r *http.Request) (*routing.Response, error) {
@@ -111,9 +110,9 @@ func (h *SpaceQuotas) applyQuota(r *http.Request) (*routing.Response, error) {
 	// logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.space-quotas.delete")
 
 	spaceQuotas := []repositories.SpaceData{
-		{GUID: "org-guid-1"},
-		{GUID: "org-guid-2"},
-		{GUID: "org-guid-3"},
+		{GUID: "space-guid-1"},
+		{GUID: "space-guid-2"},
+		{GUID: "space-guid-3"},
 	}
 
 	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForQuotaToSpaces(spaceQuotas, h.apiBaseURL)), nil
