@@ -11,19 +11,6 @@ import (
 	"github.com/google/uuid"
 )
 
-//  POST /v3/isolation_segments
-//  GET /v3/isolation_segments
-
-//  GET /v3/isolation_segments/:guid
-//  PATCH /v3/isolation_segments/:guid
-//  DELETE /v3/isolation_segments/:guid
-
-//  GET /v3/isolation_segments/:guid/relationships/organizations
-//  POST /v3/isolation_segments/:guid/relationships/organizations
-
-//  GET /v3/isolation_segments/:guid/relationships/spaces
-//  DELETE /v3/isolation_segments/:guid/relationships/organizations/:org_guid
-
 const (
 	IsolationSegmentsPath      = "/v3/isolation_segments"
 	IsolationSegmentPath       = "/v3/isolation_segments/{guid}"
@@ -80,13 +67,13 @@ func (h *IsolationSegments) list(r *http.Request) (*routing.Response, error) {
 	isolSegment := []repositories.IsolationSegmentRecord{
 		{
 			GUID:      uuid.NewString(),
-			Name:      "org-quota-name-1",
+			Name:      "is-name-1",
 			CreatedAt: time.Date(2025, time.January, 1, 12, 0, 0, 0, time.UTC),
 			UpdatedAt: time.Date(2025, time.February, 1, 12, 0, 0, 0, time.UTC),
 		},
 		{
 			GUID:      uuid.NewString(),
-			Name:      "org-quota-name-2",
+			Name:      "is-name-2",
 			CreatedAt: time.Date(2025, time.January, 5, 12, 0, 0, 0, time.UTC),
 			UpdatedAt: time.Date(2025, time.February, 5, 12, 0, 0, 0, time.UTC),
 		},
@@ -106,12 +93,12 @@ func (h *IsolationSegments) listOrgs(r *http.Request) (*routing.Response, error)
 }
 
 func (h *IsolationSegments) listSpaces(r *http.Request) (*routing.Response, error) {
-	spaces := []repositories.OrgData{
+	orgs := []repositories.OrgData{
 		{GUID: "org-guid-1"},
 		{GUID: "org-guid-2"},
 		{GUID: "org-guid-3"},
 	}
-	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForIsolationSegmentToOrgs(spaces, h.apiBaseURL)), nil
+	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForIsolationSegmentToOrgs(orgs, h.apiBaseURL)), nil
 }
 
 func (h *IsolationSegments) update(r *http.Request) (*routing.Response, error) {
@@ -131,12 +118,12 @@ func (h *IsolationSegments) delete(r *http.Request) (*routing.Response, error) {
 }
 
 func (h *IsolationSegments) addOrgs(r *http.Request) (*routing.Response, error) {
-	spaces := []repositories.OrgData{
+	orgs := []repositories.OrgData{
 		{GUID: "org-guid-1"},
 		{GUID: "org-guid-2"},
 		{GUID: "org-guid-3"},
 	}
-	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForIsolationSegmentToOrgs(spaces, h.apiBaseURL)), nil
+	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForIsolationSegmentToOrgs(orgs, h.apiBaseURL)), nil
 }
 
 func (h *IsolationSegments) removeOrg(r *http.Request) (*routing.Response, error) {
