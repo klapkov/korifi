@@ -154,14 +154,8 @@ func (r *AppWorkloadToStatefulsetConverter) Convert(appWorkload *korifiv1alpha1.
 			Replicas:            &appWorkload.Spec.Instances,
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
-					Containers:       containers,
-					ImagePullSecrets: appWorkload.Spec.ImagePullSecrets,
-					SecurityContext: &corev1.PodSecurityContext{
-						RunAsNonRoot: tools.PtrTo(true),
-						SeccompProfile: &corev1.SeccompProfile{
-							Type: corev1.SeccompProfileTypeRuntimeDefault,
-						},
-					},
+					Containers:         containers,
+					ImagePullSecrets:   appWorkload.Spec.ImagePullSecrets,
 					ServiceAccountName: ServiceAccountName,
 					Volumes: slices.Collect(it.Map(slices.Values(appWorkload.Spec.Services), func(s korifiv1alpha1.ServiceBinding) corev1.Volume {
 						return corev1.Volume{
