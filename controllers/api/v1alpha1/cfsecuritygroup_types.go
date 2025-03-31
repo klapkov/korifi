@@ -75,11 +75,7 @@ func (s CFSecurityGroup) UniqueName() string {
 }
 
 func (b CFSecurityGroup) UniqueValidationErrorMessage() string {
-<<<<<<< HEAD
 	return fmt.Sprintf("Security group with name '%s' already exists.", b.Spec.DisplayName)
-=======
-	return fmt.Sprintf("Security group with name '%s' already exists", b.Spec.DisplayName)
->>>>>>> 18ef712c (Fix security group duplicate error)
 }
 
 func (g *CFSecurityGroup) StatusConditions() *[]metav1.Condition {
