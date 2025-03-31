@@ -435,6 +435,7 @@ func main() {
 			*serverURL,
 			spaceRepo,
 			requestValidator,
+			orgRepo,
 		),
 		handlers.NewSpaceManifest(
 			*serverURL,

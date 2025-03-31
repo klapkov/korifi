@@ -148,6 +148,7 @@ var _ = Describe("Space", func() {
 				Entry("names", "names=name", payloads.SpaceList{Names: "name"}),
 				Entry("guids", "guids=guid", payloads.SpaceList{GUIDs: "guid"}),
 				Entry("organization_guids", "organization_guids=org-guid", payloads.SpaceList{OrganizationGUIDs: "org-guid"}),
+				Entry("include", "include=organization", payloads.SpaceList{Include: "organization"}),
 				Entry("order_by", "order_by=something", payloads.SpaceList{}),
 				Entry("per_page", "per_page=few", payloads.SpaceList{}),
 				Entry("page", "page=3", payloads.SpaceList{}),

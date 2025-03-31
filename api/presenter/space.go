@@ -2,10 +2,13 @@ package presenter
 
 import (
 	"net/url"
+	"slices"
 
 	"code.cloudfoundry.org/korifi/api/repositories"
 	"code.cloudfoundry.org/korifi/api/repositories/include"
 	"code.cloudfoundry.org/korifi/tools"
+	"github.com/BooleanCat/go-functional/v2/it"
+	"github.com/BooleanCat/go-functional/v2/it/itx"
 )
 
 const (
@@ -48,4 +51,15 @@ func ForSpace(space repositories.SpaceRecord, apiBaseURL url.URL, includes ...in
 			},
 		},
 	}
+}
+
+func ForSpaceList(spaceRecords []repositories.SpaceRecord, orgRecords []repositories.OrgRecord, baseURL, requestURL url.URL) ListResponse[SpaceResponse] {
+	includedOrgs := slices.Collect(it.Map(itx.FromSlice(orgRecords), func(org repositories.OrgRecord) include.Resource {
+		return include.Resource{
+			Type:     "organizations",
+			Resource: ForOrg(org, baseURL),
+		}
+	}))
+
+	return ForList(ForSpace, spaceRecords, baseURL, requestURL, includedOrgs...)
 }

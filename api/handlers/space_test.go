@@ -22,6 +22,7 @@ var _ = Describe("Space", func() {
 	var (
 		apiHandler       *handlers.Space
 		spaceRepo        *fake.CFSpaceRepository
+		orgRepo          *fake.CFOrgRepository
 		requestValidator *fake.RequestValidator
 		requestMethod    string
 		requestPath      string
@@ -32,6 +33,7 @@ var _ = Describe("Space", func() {
 
 		requestValidator = new(fake.RequestValidator)
 		spaceRepo = new(fake.CFSpaceRepository)
+		orgRepo = new(fake.CFOrgRepository)
 		spaceRepo.GetSpaceReturns(repositories.SpaceRecord{
 			Name:             "the-space",
 			GUID:             "the-space-guid",
@@ -42,6 +44,7 @@ var _ = Describe("Space", func() {
 			*serverURL,
 			spaceRepo,
 			requestValidator,
+			orgRepo,
 		)
 		routerBuilder.LoadRoutes(apiHandler)
 	})
@@ -124,7 +127,7 @@ var _ = Describe("Space", func() {
 		})
 	})
 
-	Describe("Listing Spaces", func() {
+	FDescribe("Listing Spaces", func() {
 		BeforeEach(func() {
 			requestMethod = http.MethodGet
 			requestPath += "?foo=bar"
@@ -172,6 +175,24 @@ var _ = Describe("Space", func() {
 
 			It("returns an error", func() {
 				expectUnknownError()
+			})
+		})
+
+		When("an include=organization query parameter is specified", func() {
+			BeforeEach(func() {
+				payload := payloads.SpaceList{
+					Include: "organization",
+				}
+				requestValidator.DecodeAndValidateURLValuesStub = decodeAndValidateURLValuesStub(&payload)
+			})
+
+			It("includes app data in the response", func() {
+				Expect(orgRepo.ListOrgsCallCount()).To(Equal(1))
+				_, _, listOrgsMessage := orgRepo.ListOrgsArgsForCall(0)
+				Expect(listOrgsMessage.GUIDs).To(ContainElements("test-org-1-guid", "test-org-2-guid"))
+
+				Expect(rr).To(HaveHTTPBody(MatchJSONPath("$.included.organizations[0].guid", "test-org-1-guid")))
+				Expect(rr).To(HaveHTTPBody(MatchJSONPath("$.included.organizations[1].guid", "test-org-2-guid")))
 			})
 		})
 	})

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"net/url"
 	"time"
@@ -34,15 +35,17 @@ type CFSpaceRepository interface {
 
 type Space struct {
 	spaceRepo        CFSpaceRepository
+	orgRepo          CFOrgRepository
 	apiBaseURL       url.URL
 	requestValidator RequestValidator
 }
 
-func NewSpace(apiBaseURL url.URL, spaceRepo CFSpaceRepository, requestValidator RequestValidator) *Space {
+func NewSpace(apiBaseURL url.URL, spaceRepo CFSpaceRepository, requestValidator RequestValidator, orgRepo CFOrgRepository) *Space {
 	return &Space{
 		apiBaseURL:       apiBaseURL,
 		spaceRepo:        spaceRepo,
 		requestValidator: requestValidator,
+		orgRepo:          orgRepo,
 	}
 }
 
@@ -83,7 +86,23 @@ func (h *Space) list(r *http.Request) (*routing.Response, error) {
 		return nil, apierrors.LogAndReturn(logger, err, "Failed to fetch spaces")
 	}
 
-	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForList(presenter.ForSpace, spaces, h.apiBaseURL, *r.URL)), nil
+	var orgs []repositories.OrgRecord
+	if spaceList.Include != "" && len(spaces) > 0 {
+		listOrgsMessage := repositories.ListOrgsMessage{}
+
+		for _, space := range spaces {
+			listOrgsMessage.GUIDs = append(listOrgsMessage.GUIDs, space.OrganizationGUID)
+		}
+
+		orgs, err = h.orgRepo.ListOrgs(r.Context(), authInfo, listOrgsMessage)
+		if err != nil {
+			return nil, apierrors.LogAndReturn(logger, err, "Failed to fetch related org")
+		}
+
+		log.Printf("sasa: %+v", len(orgs))
+	}
+
+	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForSpaceList(spaces, orgs, h.apiBaseURL, *r.URL)), nil
 }
 
 //nolint:dupl

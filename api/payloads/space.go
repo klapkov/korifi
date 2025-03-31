@@ -4,8 +4,9 @@ import (
 	"net/url"
 
 	"code.cloudfoundry.org/korifi/api/payloads/parse"
+	"code.cloudfoundry.org/korifi/api/payloads/validation"
 	"code.cloudfoundry.org/korifi/api/repositories"
-	"github.com/jellydator/validation"
+	jellidation "github.com/jellydator/validation"
 )
 
 type SpaceCreate struct {
@@ -15,10 +16,10 @@ type SpaceCreate struct {
 }
 
 func (c SpaceCreate) Validate() error {
-	return validation.ValidateStruct(&c,
-		validation.Field(&c.Name, validation.Required),
-		validation.Field(&c.Relationships, validation.NotNil),
-		validation.Field(&c.Metadata),
+	return jellidation.ValidateStruct(&c,
+		jellidation.Field(&c.Name, jellidation.Required),
+		jellidation.Field(&c.Relationships, jellidation.NotNil),
+		jellidation.Field(&c.Metadata),
 	)
 }
 
@@ -34,8 +35,8 @@ type SpaceRelationships struct {
 }
 
 func (r SpaceRelationships) Validate() error {
-	return validation.ValidateStruct(&r,
-		validation.Field(&r.Org, validation.NotNil),
+	return jellidation.ValidateStruct(&r,
+		jellidation.Field(&r.Org, jellidation.NotNil),
 	)
 }
 
@@ -44,8 +45,8 @@ type SpacePatch struct {
 }
 
 func (p SpacePatch) Validate() error {
-	return validation.ValidateStruct(&p,
-		validation.Field(&p.Metadata),
+	return jellidation.ValidateStruct(&p,
+		jellidation.Field(&p.Metadata),
 	)
 }
 
@@ -64,6 +65,7 @@ type SpaceList struct {
 	Names             string
 	GUIDs             string
 	OrganizationGUIDs string
+	Include           string
 }
 
 func (l *SpaceList) ToMessage() repositories.ListSpacesMessage {
@@ -74,13 +76,20 @@ func (l *SpaceList) ToMessage() repositories.ListSpacesMessage {
 	}
 }
 
+func (l SpaceList) Validate() error {
+	return jellidation.ValidateStruct(&l,
+		jellidation.Field(&l.Include, validation.OneOf("organization")),
+	)
+}
+
 func (l *SpaceList) SupportedKeys() []string {
-	return []string{"names", "guids", "organization_guids", "order_by", "per_page", "page"}
+	return []string{"names", "guids", "organization_guids", "order_by", "per_page", "page", "include"}
 }
 
 func (l *SpaceList) DecodeFromURLValues(values url.Values) error {
 	l.Names = values.Get("names")
 	l.GUIDs = values.Get("guids")
 	l.OrganizationGUIDs = values.Get("organization_guids")
+	l.Include = values.Get("include")
 	return nil
 }
