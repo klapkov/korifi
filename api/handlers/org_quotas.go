@@ -5,9 +5,12 @@ import (
 	"net/url"
 	"time"
 
+	apierrors "code.cloudfoundry.org/korifi/api/errors"
+	"code.cloudfoundry.org/korifi/api/payloads"
 	"code.cloudfoundry.org/korifi/api/presenter"
 	"code.cloudfoundry.org/korifi/api/repositories"
 	"code.cloudfoundry.org/korifi/api/routing"
+	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 )
 
@@ -59,22 +62,36 @@ func (h *OrgQuotas) create(r *http.Request) (*routing.Response, error) {
 }
 
 func (h *OrgQuotas) list(r *http.Request) (*routing.Response, error) {
-	//authInfo, _ := authorization.InfoFromContext(r.Context())
-	//logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.org-quotas.list")
+	var orgQuotas []repositories.OrgQuotaRecord
+	logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.org-quotas.list")
 
-	orgQuotas := []repositories.OrgQuotaRecord{
-		{
+	payload := new(payloads.OrgQuotasList)
+	if err := h.requestValidator.DecodeAndValidateJSONPayload(r, payload); err != nil {
+		return nil, apierrors.LogAndReturn(logger, err, "failed to decode payload")
+	}
+
+	if payload.Names != "" {
+		orgQuotas = append(orgQuotas, repositories.OrgQuotaRecord{
 			GUID:      uuid.NewString(),
-			Name:      "org-quota-name-1",
+			Name:      payload.Names,
 			CreatedAt: time.Date(2025, time.January, 1, 12, 0, 0, 0, time.UTC),
 			UpdatedAt: time.Date(2025, time.February, 1, 12, 0, 0, 0, time.UTC),
-		},
-		{
-			GUID:      uuid.NewString(),
-			Name:      "org-quota-name-2",
-			CreatedAt: time.Date(2025, time.January, 5, 12, 0, 0, 0, time.UTC),
-			UpdatedAt: time.Date(2025, time.February, 5, 12, 0, 0, 0, time.UTC),
-		},
+		})
+	} else {
+		orgQuotas = []repositories.OrgQuotaRecord{
+			{
+				GUID:      uuid.NewString(),
+				Name:      "org-quota-name-1",
+				CreatedAt: time.Date(2025, time.January, 1, 12, 0, 0, 0, time.UTC),
+				UpdatedAt: time.Date(2025, time.February, 1, 12, 0, 0, 0, time.UTC),
+			},
+			{
+				GUID:      uuid.NewString(),
+				Name:      "org-quota-name-2",
+				CreatedAt: time.Date(2025, time.January, 5, 12, 0, 0, 0, time.UTC),
+				UpdatedAt: time.Date(2025, time.February, 5, 12, 0, 0, 0, time.UTC),
+			},
+		}
 	}
 
 	return routing.NewResponse(http.StatusOK).WithBody(presenter.ForList(presenter.ForOrgQuota, orgQuotas, h.apiBaseURL, *r.URL)), nil
