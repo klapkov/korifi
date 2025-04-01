@@ -150,6 +150,7 @@ var _ = Describe("Space", func() {
 				Entry("names", "names=name", payloads.SpaceList{Names: "name"}),
 				Entry("guids", "guids=guid", payloads.SpaceList{GUIDs: "guid"}),
 				Entry("organization_guids", "organization_guids=org-guid", payloads.SpaceList{OrganizationGUIDs: "org-guid"}),
+				Entry("include", "include=organization", payloads.SpaceList{Include: "organization"}),
 				Entry("order_by", "order_by=something", payloads.SpaceList{}),
 				Entry("per_page", "per_page=few", payloads.SpaceList{}),
 				Entry("page", "page=3", payloads.SpaceList{}),
@@ -251,6 +252,22 @@ var _ = Describe("Space", func() {
 					"unmapped cannot be blank",
 				)
 			})
+		})
+	})
+
+	Describe("SpaceGet", func() {
+		Describe("Validation", func() {
+			DescribeTable("valid query",
+				func(query string, expectedSpaceGet payloads.SpaceGet) {
+					actualSpaceGet, decodeErr := decodeQuery[payloads.SpaceGet](query)
+
+					Expect(decodeErr).NotTo(HaveOccurred())
+					Expect(*actualSpaceGet).To(Equal(expectedSpaceGet))
+				},
+
+				Entry("include", "include=organization", payloads.SpaceGet{Include: "organization"}),
+				Entry("include", "include=something", payloads.SpaceGet{}),
+			)
 		})
 	})
 })
