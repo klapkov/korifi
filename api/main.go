@@ -424,7 +424,11 @@ func main() {
 		handlers.NewSpace(
 			*serverURL,
 			spaceRepo,
+<<<<<<< HEAD
 			routeRepo,
+=======
+			orgRepo,
+>>>>>>> dde705d3 (Added inmplementation for included query parameter for spaces endpoints)
 			requestValidator,
 		),
 		handlers.NewSpaceManifest(
