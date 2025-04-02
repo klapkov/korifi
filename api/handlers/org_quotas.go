@@ -66,7 +66,7 @@ func (h *OrgQuotas) list(r *http.Request) (*routing.Response, error) {
 	logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.org-quotas.list")
 
 	payload := new(payloads.OrgQuotasList)
-	if err := h.requestValidator.DecodeAndValidateJSONPayload(r, payload); err != nil {
+	if err := h.requestValidator.DecodeAndValidateURLValues(r, payload); err != nil {
 		return nil, apierrors.LogAndReturn(logger, err, "failed to decode payload")
 	}
 
