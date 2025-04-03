@@ -139,6 +139,15 @@ var _ = Describe("SecurityGroup", func() {
 				RunningSpaces: []string{"space1"},
 				StagingSpaces: []string{"space2"},
 			}, nil)
+
+			spaceRepo.ListSpacesReturns([]repositories.SpaceRecord{
+				{
+					Name: "space1",
+				},
+				{
+					Name: "space2",
+				},
+			}, nil)
 		})
 
 		It("validates the request", func() {
@@ -178,13 +187,13 @@ var _ = Describe("SecurityGroup", func() {
 			)))
 		})
 
-		When("the requested binded space does not exist", func() {
+		When("a space in the security group does not exist", func() {
 			BeforeEach(func() {
-				spaceRepo.ListSpacesReturns([]repositories.SpaceRecord{}, errors.New("boom"))
+				spaceRepo.ListSpacesReturns([]repositories.SpaceRecord{}, apierrors.NewNotFoundError(nil, repositories.SecurityGroupResourceType))
 			})
 
-			It("returns an error", func() {
-				expectUnknownError()
+			It("returns a not found error", func() {
+				expectNotFoundError(repositories.SecurityGroupResourceType)
 			})
 		})
 
@@ -326,40 +335,72 @@ var _ = Describe("SecurityGroup", func() {
 	})
 
 	Describe("POST /v3/security_groups/{guid}/relationships/running_spaces", func() {
-		var payload payloads.SecurityGroupBindRunning
+		var payload payloads.SecurityGroupBind
 
 		BeforeEach(func() {
 			requestMethod = http.MethodPost
 			requestPath = "/v3/security_groups/test-guid/relationships/running_spaces"
-			requestBody = `{"data": [{"guid": "space-guid"}]}`
+			requestBody = "the-json-body"
 
-			payload = payloads.SecurityGroupBindRunning{
-				Data: []payloads.RelationshipData{{GUID: "space-guid"}},
+			payload = payloads.SecurityGroupBind{
+				Data: []payloads.RelationshipData{{GUID: "space1"}},
 			}
 			requestValidator.DecodeAndValidateJSONPayloadStub = decodeAndValidatePayloadStub(&payload)
 
 			securityGroupRepo.GetSecurityGroupReturns(repositories.SecurityGroupRecord{
 				GUID: "test-guid",
+				Name: "test-security-group",
+				Rules: []korifiv1alpha1.SecurityGroupRule{
+					{
+						Protocol:    korifiv1alpha1.ProtocolTCP,
+						Ports:       "80",
+						Destination: "192.168.1.1",
+					},
+				},
 			}, nil)
 
 			spaceRepo.ListSpacesReturns([]repositories.SpaceRecord{
-				{GUID: "space-guid"},
+				{GUID: "space1"},
 			}, nil)
 
 			securityGroupRepo.BindRunningSecurityGroupReturns(repositories.SecurityGroupRecord{
 				GUID: "test-guid",
+				Name: "test-security-group",
+				Rules: []korifiv1alpha1.SecurityGroupRule{
+					{
+						Protocol:    korifiv1alpha1.ProtocolTCP,
+						Ports:       "80",
+						Destination: "192.168.1.1",
+					},
+				},
+				RunningSpaces: []string{"space1"},
 			}, nil)
+		})
+
+		It("validates the request", func() {
+			Expect(requestValidator.DecodeAndValidateJSONPayloadCallCount()).To(Equal(1))
+			actualReq, _ := requestValidator.DecodeAndValidateJSONPayloadArgsForCall(0)
+			Expect(bodyString(actualReq)).To(Equal("the-json-body"))
 		})
 
 		It("binds running spaces to the security group", func() {
 			Expect(rr).To(HaveHTTPStatus(http.StatusOK))
 			Expect(rr).To(HaveHTTPHeaderWithValue("Content-Type", "application/json"))
 
-			Expect(securityGroupRepo.BindRunningSecurityGroupCallCount()).To(Equal(1))
-			_, actualAuthInfo, bindMessage := securityGroupRepo.BindRunningSecurityGroupArgsForCall(0)
+			Expect(securityGroupRepo.GetSecurityGroupCallCount()).To(Equal(1))
+			_, actualAuthInfo, guid := securityGroupRepo.GetSecurityGroupArgsForCall(0)
+
 			Expect(actualAuthInfo).To(Equal(authInfo))
+			Expect(guid).To(Equal("test-guid"))
+
+			Expect(spaceRepo.ListSpacesCallCount()).To(Equal(1))
+			_, _, listMessage := spaceRepo.ListSpacesArgsForCall(0)
+			Expect(listMessage.GUIDs).To(ConsistOf("space1"))
+
+			Expect(securityGroupRepo.BindRunningSecurityGroupCallCount()).To(Equal(1))
+			_, _, bindMessage := securityGroupRepo.BindRunningSecurityGroupArgsForCall(0)
 			Expect(bindMessage.GUID).To(Equal("test-guid"))
-			Expect(bindMessage.Spaces).To(ConsistOf("space-guid"))
+			Expect(bindMessage.Spaces).To(ConsistOf("space1"))
 		})
 
 		When("the payload is invalid", func() {
@@ -368,7 +409,7 @@ var _ = Describe("SecurityGroup", func() {
 			})
 
 			It("returns a validation error", func() {
-				expectUnprocessableEntityError("validation-error")
+				expectUnknownError()
 			})
 		})
 
@@ -382,13 +423,13 @@ var _ = Describe("SecurityGroup", func() {
 			})
 		})
 
-		When("the space does not exist", func() {
+		When("the spaces does not exist", func() {
 			BeforeEach(func() {
 				spaceRepo.ListSpacesReturns([]repositories.SpaceRecord{}, nil)
 			})
 
-			It("returns an unprocessable entity error", func() {
-				expectUnprocessableEntityError("failed to bind security group, space  does not exist")
+			It("returns a 404 not found error", func() {
+				expectNotFoundError(repositories.SpaceResourceType)
 			})
 		})
 
@@ -404,40 +445,72 @@ var _ = Describe("SecurityGroup", func() {
 	})
 
 	Describe("POST /v3/security_groups/{guid}/relationships/staging_spaces", func() {
-		var payload payloads.SecurityGroupBindStaging
+		var payload payloads.SecurityGroupBind
 
 		BeforeEach(func() {
 			requestMethod = http.MethodPost
 			requestPath = "/v3/security_groups/test-guid/relationships/staging_spaces"
-			requestBody = `{"data": [{"guid": "space-guid"}]}`
+			requestBody = "the-json-body"
 
-			payload = payloads.SecurityGroupBindStaging{
-				Data: []payloads.RelationshipData{{GUID: "space-guid"}},
+			payload = payloads.SecurityGroupBind{
+				Data: []payloads.RelationshipData{{GUID: "space1"}},
 			}
 			requestValidator.DecodeAndValidateJSONPayloadStub = decodeAndValidatePayloadStub(&payload)
 
 			securityGroupRepo.GetSecurityGroupReturns(repositories.SecurityGroupRecord{
 				GUID: "test-guid",
+				Name: "test-security-group",
+				Rules: []korifiv1alpha1.SecurityGroupRule{
+					{
+						Protocol:    korifiv1alpha1.ProtocolTCP,
+						Ports:       "80",
+						Destination: "192.168.1.1",
+					},
+				},
 			}, nil)
 
 			spaceRepo.ListSpacesReturns([]repositories.SpaceRecord{
-				{GUID: "space-guid"},
+				{GUID: "space1"},
 			}, nil)
 
 			securityGroupRepo.BindStagingSecurityGroupReturns(repositories.SecurityGroupRecord{
 				GUID: "test-guid",
+				Name: "test-security-group",
+				Rules: []korifiv1alpha1.SecurityGroupRule{
+					{
+						Protocol:    korifiv1alpha1.ProtocolTCP,
+						Ports:       "80",
+						Destination: "192.168.1.1",
+					},
+				},
+				StagingSpaces: []string{"space1"},
 			}, nil)
+		})
+
+		It("validates the request", func() {
+			Expect(requestValidator.DecodeAndValidateJSONPayloadCallCount()).To(Equal(1))
+			actualReq, _ := requestValidator.DecodeAndValidateJSONPayloadArgsForCall(0)
+			Expect(bodyString(actualReq)).To(Equal("the-json-body"))
 		})
 
 		It("binds staging spaces to the security group", func() {
 			Expect(rr).To(HaveHTTPStatus(http.StatusOK))
 			Expect(rr).To(HaveHTTPHeaderWithValue("Content-Type", "application/json"))
 
-			Expect(securityGroupRepo.BindStagingSecurityGroupCallCount()).To(Equal(1))
-			_, actualAuthInfo, bindMessage := securityGroupRepo.BindStagingSecurityGroupArgsForCall(0)
+			Expect(securityGroupRepo.GetSecurityGroupCallCount()).To(Equal(1))
+			_, actualAuthInfo, guid := securityGroupRepo.GetSecurityGroupArgsForCall(0)
+
 			Expect(actualAuthInfo).To(Equal(authInfo))
+			Expect(guid).To(Equal("test-guid"))
+
+			Expect(spaceRepo.ListSpacesCallCount()).To(Equal(1))
+			_, _, listMessage := spaceRepo.ListSpacesArgsForCall(0)
+			Expect(listMessage.GUIDs).To(ConsistOf("space1"))
+
+			Expect(securityGroupRepo.BindStagingSecurityGroupCallCount()).To(Equal(1))
+			_, _, bindMessage := securityGroupRepo.BindStagingSecurityGroupArgsForCall(0)
 			Expect(bindMessage.GUID).To(Equal("test-guid"))
-			Expect(bindMessage.Spaces).To(ConsistOf("space-guid"))
+			Expect(bindMessage.Spaces).To(ConsistOf("space1"))
 		})
 
 		When("the payload is invalid", func() {
@@ -446,7 +519,7 @@ var _ = Describe("SecurityGroup", func() {
 			})
 
 			It("returns a validation error", func() {
-				expectUnprocessableEntityError("validation-error")
+				expectUnknownError()
 			})
 		})
 
@@ -460,13 +533,13 @@ var _ = Describe("SecurityGroup", func() {
 			})
 		})
 
-		When("the space does not exist", func() {
+		When("the spaces does not exist", func() {
 			BeforeEach(func() {
 				spaceRepo.ListSpacesReturns([]repositories.SpaceRecord{}, nil)
 			})
 
-			It("returns an unprocessable entity error", func() {
-				expectUnprocessableEntityError("failed to bind security group, space  does not exist")
+			It("returns a 404 not found error", func() {
+				expectNotFoundError(repositories.SpaceResourceType)
 			})
 		})
 

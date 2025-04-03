@@ -2,6 +2,7 @@ package payloads
 
 import (
 	"fmt"
+	"log"
 	"net/url"
 	"regexp"
 
@@ -55,6 +56,9 @@ func (p AppCreate) ToAppCreateMessage() repositories.CreateAppMessage {
 			Stack: DefaultLifecycleConfig.Stack,
 		},
 	}
+
+	log.Printf("from pay: %+v", lifecycleBlock)
+
 	if p.Lifecycle != nil {
 		lifecycleBlock.Type = p.Lifecycle.Type
 		lifecycleBlock.Data.Stack = p.Lifecycle.Data.Stack

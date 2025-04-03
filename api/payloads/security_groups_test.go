@@ -21,7 +21,7 @@ var _ = Describe("SecurityGroupCreate", func() {
 		securityGroupCreate = new(payloads.SecurityGroupCreate)
 	})
 
-	FDescribe("Validation", func() {
+	Describe("Validation", func() {
 		BeforeEach(func() {
 			createPayload = payloads.SecurityGroupCreate{
 				DisplayName: "test-security-group",
@@ -75,7 +75,7 @@ var _ = Describe("SecurityGroupCreate", func() {
 				createPayload.Rules[0].Protocol = "invalid"
 			})
 			It("returns an error", func() {
-				expectUnprocessableEntityError(validatorErr, "Rules[0]: protocol invalid not supported")
+				expectUnprocessableEntityError(validatorErr, "rules[0]: protocol invalid not supported")
 			})
 		})
 
@@ -85,7 +85,7 @@ var _ = Describe("SecurityGroupCreate", func() {
 				createPayload.Rules[0].Ports = "80"
 			})
 			It("returns an error", func() {
-				expectUnprocessableEntityError(validatorErr, "Rules[0]: ports are not allowed for protocols of type all")
+				expectUnprocessableEntityError(validatorErr, "rules[0]: ports are not allowed for protocols of type all")
 			})
 		})
 
@@ -95,7 +95,7 @@ var _ = Describe("SecurityGroupCreate", func() {
 				createPayload.Rules[0].Ports = ""
 			})
 			It("returns an error", func() {
-				expectUnprocessableEntityError(validatorErr, "Rules[0]: ports are required for protocols of type TCP and UDP")
+				expectUnprocessableEntityError(validatorErr, "rules[0]: ports are required for protocols of type TCP and UDP")
 			})
 		})
 
@@ -104,7 +104,7 @@ var _ = Describe("SecurityGroupCreate", func() {
 				createPayload.Rules[0].Destination = "invalid-dest"
 			})
 			It("returns an error", func() {
-				expectUnprocessableEntityError(validatorErr, "Rules[0]: The Destination: invalid-dest is not in a valid format")
+				expectUnprocessableEntityError(validatorErr, "rules[0]: the destination: invalid-dest is not in a valid format")
 			})
 		})
 
@@ -113,40 +113,26 @@ var _ = Describe("SecurityGroupCreate", func() {
 				createPayload.Rules[0].Ports = "invalid-port"
 			})
 			It("returns an error", func() {
-				expectUnprocessableEntityError(validatorErr, "Rules[0]: The ports: invalid-port is not in a valid format")
+				expectUnprocessableEntityError(validatorErr, "rules[0]: the ports: invalid-port is not in a valid format")
 			})
 		})
-	})
 
-	Describe("ToMessage", func() {
-		var message repositories.CreateSecurityGroupMessage
+		When("Converting to repo message", func() {
+			var message repositories.CreateSecurityGroupMessage
 
-		BeforeEach(func() {
-			createPayload = payloads.SecurityGroupCreate{
-				DisplayName: "test-security-group",
-				Rules: []korifiv1alpha1.SecurityGroupRule{
-					{Protocol: korifiv1alpha1.ProtocolTCP, Ports: "80", Destination: "192.168.1.1"},
-				},
-				GloballyEnabled: korifiv1alpha1.SecurityGroupWorkloads{Running: false, Staging: false},
-				Relationships: payloads.SecurityGroupRelationships{
-					RunningSpaces: payloads.ToManyRelationship{Data: []payloads.RelationshipData{{GUID: "space1"}}},
-					StagingSpaces: payloads.ToManyRelationship{Data: []payloads.RelationshipData{{GUID: "space2"}}},
-				},
-			}
-		})
+			BeforeEach(func() {
+				message = createPayload.ToMessage()
+			})
 
-		JustBeforeEach(func() {
-			message = createPayload.ToMessage()
-		})
-
-		It("converts to repo message correctly", func() {
-			Expect(message.DisplayName).To(Equal("test-security-group"))
-			Expect(message.Rules).To(Equal(createPayload.Rules))
-			Expect(message.GloballyEnabled).To(Equal(korifiv1alpha1.SecurityGroupWorkloads{Running: false, Staging: false}))
-			Expect(message.Spaces).To(MatchAllKeys(Keys{
-				"space1": Equal(korifiv1alpha1.SecurityGroupWorkloads{Running: true}),
-				"space2": Equal(korifiv1alpha1.SecurityGroupWorkloads{Staging: true}),
-			}))
+			It("Converts the message correctly", func() {
+				Expect(message.DisplayName).To(Equal("test-security-group"))
+				Expect(message.Rules).To(Equal(createPayload.Rules))
+				Expect(message.GloballyEnabled).To(Equal(korifiv1alpha1.SecurityGroupWorkloads{Running: false, Staging: false}))
+				Expect(message.Spaces).To(MatchAllKeys(Keys{
+					"space1": Equal(korifiv1alpha1.SecurityGroupWorkloads{Running: true}),
+					"space2": Equal(korifiv1alpha1.SecurityGroupWorkloads{Staging: true}),
+				}))
+			})
 		})
 	})
 })
@@ -288,20 +274,20 @@ var _ = Describe("SecurityGroupUpdate", func() {
 	})
 })
 
-var _ = Describe("SecurityGroupBindRunning", func() {
+var _ = Describe("SecurityGroupBind", func() {
 	var (
-		bindPayload       payloads.SecurityGroupBindRunning
-		securityGroupBind *payloads.SecurityGroupBindRunning
+		bindPayload       payloads.SecurityGroupBind
+		securityGroupBind *payloads.SecurityGroupBind
 		validatorErr      error
 	)
 
 	BeforeEach(func() {
-		securityGroupBind = new(payloads.SecurityGroupBindRunning)
+		securityGroupBind = new(payloads.SecurityGroupBind)
 	})
 
 	Describe("Validation", func() {
 		BeforeEach(func() {
-			bindPayload = payloads.SecurityGroupBindRunning{
+			bindPayload = payloads.SecurityGroupBind{
 				Data: []payloads.RelationshipData{{GUID: "space1"}, {GUID: "space2"}},
 			}
 		})
@@ -323,85 +309,26 @@ var _ = Describe("SecurityGroupBindRunning", func() {
 				expectUnprocessableEntityError(validatorErr, "data cannot be blank")
 			})
 		})
-	})
 
-	Describe("ToMessage", func() {
-		var message repositories.BindRunningSecurityGroupMessage
+		When("Converting to repo message", func() {
+			var message repositories.BindSecurityGroupMessage
 
-		BeforeEach(func() {
-			bindPayload = payloads.SecurityGroupBindRunning{
-				Data: []payloads.RelationshipData{{GUID: "space1"}, {GUID: "space2"}},
-			}
-		})
-
-		JustBeforeEach(func() {
-			message = bindPayload.ToMessage("sg-guid")
-		})
-
-		It("converts to repo message correctly", func() {
-			Expect(message).To(Equal(repositories.BindRunningSecurityGroupMessage{
-				GUID:   "sg-guid",
-				Spaces: []string{"space1", "space2"},
-			}))
-		})
-	})
-})
-
-var _ = Describe("SecurityGroupBindStaging", func() {
-	var (
-		bindPayload       payloads.SecurityGroupBindStaging
-		securityGroupBind *payloads.SecurityGroupBindStaging
-		validatorErr      error
-	)
-
-	BeforeEach(func() {
-		securityGroupBind = new(payloads.SecurityGroupBindStaging)
-	})
-
-	Describe("Validation", func() {
-		BeforeEach(func() {
-			bindPayload = payloads.SecurityGroupBindStaging{
-				Data: []payloads.RelationshipData{{GUID: "space1"}, {GUID: "space2"}},
-			}
-		})
-
-		JustBeforeEach(func() {
-			validatorErr = validator.DecodeAndValidateJSONPayload(createJSONRequest(bindPayload), securityGroupBind)
-		})
-
-		It("succeeds with valid payload", func() {
-			Expect(validatorErr).NotTo(HaveOccurred())
-			Expect(securityGroupBind).To(PointTo(Equal(bindPayload)))
-		})
-
-		When("Data is empty", func() {
 			BeforeEach(func() {
-				bindPayload.Data = []payloads.RelationshipData{}
+				bindPayload = payloads.SecurityGroupBind{
+					Data: []payloads.RelationshipData{{GUID: "space1"}, {GUID: "space2"}},
+				}
 			})
-			It("returns an error", func() {
-				expectUnprocessableEntityError(validatorErr, "data cannot be blank")
+
+			JustBeforeEach(func() {
+				message = bindPayload.ToMessage("sg-guid")
 			})
-		})
-	})
 
-	Describe("ToMessage", func() {
-		var message repositories.BindStagingSecurityGroupMessage
-
-		BeforeEach(func() {
-			bindPayload = payloads.SecurityGroupBindStaging{
-				Data: []payloads.RelationshipData{{GUID: "space1"}, {GUID: "space2"}},
-			}
-		})
-
-		JustBeforeEach(func() {
-			message = bindPayload.ToMessage("sg-guid")
-		})
-
-		It("converts to repo message correctly", func() {
-			Expect(message).To(Equal(repositories.BindStagingSecurityGroupMessage{
-				GUID:   "sg-guid",
-				Spaces: []string{"space1", "space2"},
-			}))
+			It("converts the message correctly", func() {
+				Expect(message).To(Equal(repositories.BindSecurityGroupMessage{
+					GUID:   "sg-guid",
+					Spaces: []string{"space1", "space2"},
+				}))
+			})
 		})
 	})
 })

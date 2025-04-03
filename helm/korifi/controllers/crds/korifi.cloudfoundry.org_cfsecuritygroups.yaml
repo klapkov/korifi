@@ -93,7 +93,6 @@ spec:
             - displayName
             - globally_enabled
             - rules
-            - spaces
             type: object
           status:
             properties:

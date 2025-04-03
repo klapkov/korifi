@@ -11,12 +11,12 @@ import (
 )
 
 type CFSecurityGroupRepository struct {
-	BindRunningSecurityGroupStub        func(context.Context, authorization.Info, repositories.BindRunningSecurityGroupMessage) (repositories.SecurityGroupRecord, error)
+	BindRunningSecurityGroupStub        func(context.Context, authorization.Info, repositories.BindSecurityGroupMessage) (repositories.SecurityGroupRecord, error)
 	bindRunningSecurityGroupMutex       sync.RWMutex
 	bindRunningSecurityGroupArgsForCall []struct {
 		arg1 context.Context
 		arg2 authorization.Info
-		arg3 repositories.BindRunningSecurityGroupMessage
+		arg3 repositories.BindSecurityGroupMessage
 	}
 	bindRunningSecurityGroupReturns struct {
 		result1 repositories.SecurityGroupRecord
@@ -26,12 +26,12 @@ type CFSecurityGroupRepository struct {
 		result1 repositories.SecurityGroupRecord
 		result2 error
 	}
-	BindStagingSecurityGroupStub        func(context.Context, authorization.Info, repositories.BindStagingSecurityGroupMessage) (repositories.SecurityGroupRecord, error)
+	BindStagingSecurityGroupStub        func(context.Context, authorization.Info, repositories.BindSecurityGroupMessage) (repositories.SecurityGroupRecord, error)
 	bindStagingSecurityGroupMutex       sync.RWMutex
 	bindStagingSecurityGroupArgsForCall []struct {
 		arg1 context.Context
 		arg2 authorization.Info
-		arg3 repositories.BindStagingSecurityGroupMessage
+		arg3 repositories.BindSecurityGroupMessage
 	}
 	bindStagingSecurityGroupReturns struct {
 		result1 repositories.SecurityGroupRecord
@@ -144,13 +144,13 @@ type CFSecurityGroupRepository struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *CFSecurityGroupRepository) BindRunningSecurityGroup(arg1 context.Context, arg2 authorization.Info, arg3 repositories.BindRunningSecurityGroupMessage) (repositories.SecurityGroupRecord, error) {
+func (fake *CFSecurityGroupRepository) BindRunningSecurityGroup(arg1 context.Context, arg2 authorization.Info, arg3 repositories.BindSecurityGroupMessage) (repositories.SecurityGroupRecord, error) {
 	fake.bindRunningSecurityGroupMutex.Lock()
 	ret, specificReturn := fake.bindRunningSecurityGroupReturnsOnCall[len(fake.bindRunningSecurityGroupArgsForCall)]
 	fake.bindRunningSecurityGroupArgsForCall = append(fake.bindRunningSecurityGroupArgsForCall, struct {
 		arg1 context.Context
 		arg2 authorization.Info
-		arg3 repositories.BindRunningSecurityGroupMessage
+		arg3 repositories.BindSecurityGroupMessage
 	}{arg1, arg2, arg3})
 	stub := fake.BindRunningSecurityGroupStub
 	fakeReturns := fake.bindRunningSecurityGroupReturns
@@ -171,13 +171,13 @@ func (fake *CFSecurityGroupRepository) BindRunningSecurityGroupCallCount() int {
 	return len(fake.bindRunningSecurityGroupArgsForCall)
 }
 
-func (fake *CFSecurityGroupRepository) BindRunningSecurityGroupCalls(stub func(context.Context, authorization.Info, repositories.BindRunningSecurityGroupMessage) (repositories.SecurityGroupRecord, error)) {
+func (fake *CFSecurityGroupRepository) BindRunningSecurityGroupCalls(stub func(context.Context, authorization.Info, repositories.BindSecurityGroupMessage) (repositories.SecurityGroupRecord, error)) {
 	fake.bindRunningSecurityGroupMutex.Lock()
 	defer fake.bindRunningSecurityGroupMutex.Unlock()
 	fake.BindRunningSecurityGroupStub = stub
 }
 
-func (fake *CFSecurityGroupRepository) BindRunningSecurityGroupArgsForCall(i int) (context.Context, authorization.Info, repositories.BindRunningSecurityGroupMessage) {
+func (fake *CFSecurityGroupRepository) BindRunningSecurityGroupArgsForCall(i int) (context.Context, authorization.Info, repositories.BindSecurityGroupMessage) {
 	fake.bindRunningSecurityGroupMutex.RLock()
 	defer fake.bindRunningSecurityGroupMutex.RUnlock()
 	argsForCall := fake.bindRunningSecurityGroupArgsForCall[i]
@@ -210,13 +210,13 @@ func (fake *CFSecurityGroupRepository) BindRunningSecurityGroupReturnsOnCall(i i
 	}{result1, result2}
 }
 
-func (fake *CFSecurityGroupRepository) BindStagingSecurityGroup(arg1 context.Context, arg2 authorization.Info, arg3 repositories.BindStagingSecurityGroupMessage) (repositories.SecurityGroupRecord, error) {
+func (fake *CFSecurityGroupRepository) BindStagingSecurityGroup(arg1 context.Context, arg2 authorization.Info, arg3 repositories.BindSecurityGroupMessage) (repositories.SecurityGroupRecord, error) {
 	fake.bindStagingSecurityGroupMutex.Lock()
 	ret, specificReturn := fake.bindStagingSecurityGroupReturnsOnCall[len(fake.bindStagingSecurityGroupArgsForCall)]
 	fake.bindStagingSecurityGroupArgsForCall = append(fake.bindStagingSecurityGroupArgsForCall, struct {
 		arg1 context.Context
 		arg2 authorization.Info
-		arg3 repositories.BindStagingSecurityGroupMessage
+		arg3 repositories.BindSecurityGroupMessage
 	}{arg1, arg2, arg3})
 	stub := fake.BindStagingSecurityGroupStub
 	fakeReturns := fake.bindStagingSecurityGroupReturns
@@ -237,13 +237,13 @@ func (fake *CFSecurityGroupRepository) BindStagingSecurityGroupCallCount() int {
 	return len(fake.bindStagingSecurityGroupArgsForCall)
 }
 
-func (fake *CFSecurityGroupRepository) BindStagingSecurityGroupCalls(stub func(context.Context, authorization.Info, repositories.BindStagingSecurityGroupMessage) (repositories.SecurityGroupRecord, error)) {
+func (fake *CFSecurityGroupRepository) BindStagingSecurityGroupCalls(stub func(context.Context, authorization.Info, repositories.BindSecurityGroupMessage) (repositories.SecurityGroupRecord, error)) {
 	fake.bindStagingSecurityGroupMutex.Lock()
 	defer fake.bindStagingSecurityGroupMutex.Unlock()
 	fake.BindStagingSecurityGroupStub = stub
 }
 
-func (fake *CFSecurityGroupRepository) BindStagingSecurityGroupArgsForCall(i int) (context.Context, authorization.Info, repositories.BindStagingSecurityGroupMessage) {
+func (fake *CFSecurityGroupRepository) BindStagingSecurityGroupArgsForCall(i int) (context.Context, authorization.Info, repositories.BindSecurityGroupMessage) {
 	fake.bindStagingSecurityGroupMutex.RLock()
 	defer fake.bindStagingSecurityGroupMutex.RUnlock()
 	argsForCall := fake.bindStagingSecurityGroupArgsForCall[i]

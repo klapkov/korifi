@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"maps"
 	"slices"
 	"strings"
@@ -604,6 +605,7 @@ func getAppEnv(ctx context.Context, userClient client.Client, app AppRecord) (ma
 }
 
 func (m *CreateAppMessage) toCFApp() korifiv1alpha1.CFApp {
+	log.Printf("lifecycle: %+v", m.Lifecycle)
 	return korifiv1alpha1.CFApp{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        uuid.NewString(),

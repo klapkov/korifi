@@ -85,38 +85,9 @@ func (m *UpdateSecurityGroupMessage) apply(cfSecurityGroup *korifiv1alpha1.CFSec
 	}
 }
 
-type BindRunningSecurityGroupMessage struct {
+type BindSecurityGroupMessage struct {
 	GUID   string
 	Spaces []string
-}
-
-func (m *BindRunningSecurityGroupMessage) apply(cfSecurityGroup *korifiv1alpha1.CFSecurityGroup) {
-	if cfSecurityGroup.Spec.Spaces == nil {
-		cfSecurityGroup.Spec.Spaces = make(map[string]korifiv1alpha1.SecurityGroupWorkloads)
-	}
-
-	for _, space := range m.Spaces {
-		workloads := cfSecurityGroup.Spec.Spaces[space]
-		workloads.Running = true
-		cfSecurityGroup.Spec.Spaces[space] = workloads
-	}
-}
-
-type BindStagingSecurityGroupMessage struct {
-	GUID   string
-	Spaces []string
-}
-
-func (m *BindStagingSecurityGroupMessage) apply(cfSecurityGroup *korifiv1alpha1.CFSecurityGroup) {
-	if cfSecurityGroup.Spec.Spaces == nil {
-		cfSecurityGroup.Spec.Spaces = make(map[string]korifiv1alpha1.SecurityGroupWorkloads)
-	}
-
-	for _, space := range m.Spaces {
-		workloads := cfSecurityGroup.Spec.Spaces[space]
-		workloads.Staging = true
-		cfSecurityGroup.Spec.Spaces[space] = workloads
-	}
 }
 
 type UnbindRunningSecurityGroupMessage struct {
@@ -178,7 +149,7 @@ func (r *SecurityGroupRepo) GetSecurityGroup(ctx context.Context, authInfo autho
 	}
 
 	if err = userClient.Get(ctx, client.ObjectKeyFromObject(cfSecurityGroup), cfSecurityGroup); err != nil {
-		return SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
+		return SecurityGroupRecord{}, fmt.Errorf("failed to get security group: %w", apierrors.FromK8sError(err, SecurityGroupResourceType))
 	}
 
 	return ToSecurityGroupRecord(*cfSecurityGroup), nil
@@ -204,7 +175,7 @@ func (r *SecurityGroupRepo) CreateSecurityGroup(ctx context.Context, authInfo au
 	}
 
 	if err = userClient.Create(ctx, cfSecurityGroup); err != nil {
-		return SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
+		return SecurityGroupRecord{}, fmt.Errorf("failed to create security group: %w", apierrors.FromK8sError(err, SecurityGroupResourceType))
 	}
 
 	return ToSecurityGroupRecord(*cfSecurityGroup), nil
@@ -251,7 +222,7 @@ func (r *SecurityGroupRepo) UpdateSecurityGroup(ctx context.Context, authInfo au
 	return ToSecurityGroupRecord(*cfSecurityGroup), nil
 }
 
-func (r *SecurityGroupRepo) BindRunningSecurityGroup(ctx context.Context, authInfo authorization.Info, message BindRunningSecurityGroupMessage) (SecurityGroupRecord, error) {
+func (r *SecurityGroupRepo) BindRunningSecurityGroup(ctx context.Context, authInfo authorization.Info, message BindSecurityGroupMessage) (SecurityGroupRecord, error) {
 	userClient, err := r.userClientFactory.BuildClient(authInfo)
 	if err != nil {
 		return SecurityGroupRecord{}, fmt.Errorf("failed to build user client: %w", err)
@@ -265,11 +236,19 @@ func (r *SecurityGroupRepo) BindRunningSecurityGroup(ctx context.Context, authIn
 	}
 
 	if err = userClient.Get(ctx, client.ObjectKeyFromObject(cfSecurityGroup), cfSecurityGroup); err != nil {
-		return SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
+		return SecurityGroupRecord{}, fmt.Errorf("failed to bind running space to security group: %w", apierrors.FromK8sError(err, SecurityGroupResourceType))
 	}
 
 	if err = k8s.PatchResource(ctx, userClient, cfSecurityGroup, func() {
-		message.apply(cfSecurityGroup)
+		if cfSecurityGroup.Spec.Spaces == nil {
+			cfSecurityGroup.Spec.Spaces = make(map[string]korifiv1alpha1.SecurityGroupWorkloads)
+		}
+
+		for _, space := range message.Spaces {
+			workloads := cfSecurityGroup.Spec.Spaces[space]
+			workloads.Running = true
+			cfSecurityGroup.Spec.Spaces[space] = workloads
+		}
 	}); err != nil {
 		return SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
 	}
@@ -277,7 +256,7 @@ func (r *SecurityGroupRepo) BindRunningSecurityGroup(ctx context.Context, authIn
 	return ToSecurityGroupRecord(*cfSecurityGroup), nil
 }
 
-func (r *SecurityGroupRepo) BindStagingSecurityGroup(ctx context.Context, authInfo authorization.Info, message BindStagingSecurityGroupMessage) (SecurityGroupRecord, error) {
+func (r *SecurityGroupRepo) BindStagingSecurityGroup(ctx context.Context, authInfo authorization.Info, message BindSecurityGroupMessage) (SecurityGroupRecord, error) {
 	userClient, err := r.userClientFactory.BuildClient(authInfo)
 	if err != nil {
 		return SecurityGroupRecord{}, fmt.Errorf("failed to build user client: %w", err)
@@ -291,11 +270,19 @@ func (r *SecurityGroupRepo) BindStagingSecurityGroup(ctx context.Context, authIn
 	}
 
 	if err = userClient.Get(ctx, client.ObjectKeyFromObject(cfSecurityGroup), cfSecurityGroup); err != nil {
-		return SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
+		return SecurityGroupRecord{}, fmt.Errorf("failed to bind staging space to security group: %w", apierrors.FromK8sError(err, SecurityGroupResourceType))
 	}
 
 	if err = k8s.PatchResource(ctx, userClient, cfSecurityGroup, func() {
-		message.apply(cfSecurityGroup)
+		if cfSecurityGroup.Spec.Spaces == nil {
+			cfSecurityGroup.Spec.Spaces = make(map[string]korifiv1alpha1.SecurityGroupWorkloads)
+		}
+
+		for _, space := range message.Spaces {
+			workloads := cfSecurityGroup.Spec.Spaces[space]
+			workloads.Staging = true
+			cfSecurityGroup.Spec.Spaces[space] = workloads
+		}
 	}); err != nil {
 		return SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
 	}

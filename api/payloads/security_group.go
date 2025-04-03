@@ -135,37 +135,18 @@ func (u SecurityGroupUpdate) ToMessage(guid string) repositories.UpdateSecurityG
 	}
 }
 
-type SecurityGroupBindRunning struct {
+type SecurityGroupBind struct {
 	Data []RelationshipData `json:"data"`
 }
 
-func (b SecurityGroupBindRunning) Validate() error {
+func (b SecurityGroupBind) Validate() error {
 	return jellidation.ValidateStruct(&b,
 		jellidation.Field(&b.Data, jellidation.Required),
 	)
 }
 
-func (b SecurityGroupBindRunning) ToMessage(guid string) repositories.BindRunningSecurityGroupMessage {
-	return repositories.BindRunningSecurityGroupMessage{
-		GUID: guid,
-		Spaces: slices.Collect(it.Map(slices.Values(b.Data), func(v RelationshipData) string {
-			return v.GUID
-		})),
-	}
-}
-
-type SecurityGroupBindStaging struct {
-	Data []RelationshipData `json:"data"`
-}
-
-func (b SecurityGroupBindStaging) Validate() error {
-	return jellidation.ValidateStruct(&b,
-		jellidation.Field(&b.Data, jellidation.Required),
-	)
-}
-
-func (b SecurityGroupBindStaging) ToMessage(guid string) repositories.BindStagingSecurityGroupMessage {
-	return repositories.BindStagingSecurityGroupMessage{
+func (b SecurityGroupBind) ToMessage(guid string) repositories.BindSecurityGroupMessage {
+	return repositories.BindSecurityGroupMessage{
 		GUID: guid,
 		Spaces: slices.Collect(it.Map(slices.Values(b.Data), func(v RelationshipData) string {
 			return v.GUID
@@ -180,24 +161,24 @@ func validateSecurityGroupRules(value any) error {
 	for i, rule := range rules {
 		if len(rule.Protocol) != 0 {
 			if rule.Protocol != korifiv1alpha1.ProtocolALL && rule.Protocol != korifiv1alpha1.ProtocolTCP && rule.Protocol != korifiv1alpha1.ProtocolUDP {
-				return fmt.Errorf("Rules[%d]: protocol %s not supported", i, rule.Protocol)
+				return fmt.Errorf("rules[%d]: protocol %s not supported", i, rule.Protocol)
 			}
 		}
 
 		if rule.Protocol == korifiv1alpha1.ProtocolALL && len(rule.Ports) != 0 {
-			return fmt.Errorf("Rules[%d]: ports are not allowed for protocols of type all", i)
+			return fmt.Errorf("rules[%d]: ports are not allowed for protocols of type all", i)
 		}
 
 		if (rule.Protocol == korifiv1alpha1.ProtocolTCP || rule.Protocol == korifiv1alpha1.ProtocolUDP) && len(rule.Ports) == 0 {
-			return fmt.Errorf("Rules[%d]: ports are required for protocols of type TCP and UDP, ports must be a valid single port, comma separated list of ports, or range of ports, formatted as a string", i)
+			return fmt.Errorf("rules[%d]: ports are required for protocols of type TCP and UDP, ports must be a valid single port, comma separated list of ports, or range of ports, formatted as a string", i)
 		}
 
 		if err := validateRuleDestination(rule.Destination); err != nil {
-			return fmt.Errorf("Rules[%d]: %w", i, err)
+			return fmt.Errorf("rules[%d]: %w", i, err)
 		}
 
 		if err := validateRulePorts(rule.Ports); err != nil {
-			return fmt.Errorf("Rules[%d]: %w", i, err)
+			return fmt.Errorf("rules[%d]: %w", i, err)
 		}
 	}
 
@@ -229,7 +210,7 @@ func validateRuleDestination(destination string) error {
 		}
 	}
 
-	return fmt.Errorf("The Destination: %s is not in a valid format", destination)
+	return fmt.Errorf("the destination: %s is not in a valid format", destination)
 }
 
 // isValidPort checks if a string represents a valid port number (1-65535, no leading zeros)
@@ -267,5 +248,5 @@ func validateRulePorts(ports string) error {
 		return nil
 	}
 
-	return fmt.Errorf("The ports: %s is not in a valid format", ports)
+	return fmt.Errorf("the ports: %s is not in a valid format", ports)
 }

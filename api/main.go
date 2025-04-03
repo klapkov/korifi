@@ -68,6 +68,8 @@ func main() {
 		panic(errorMessage)
 	}
 	payloads.DefaultLifecycleConfig = cfg.DefaultLifecycleConfig
+	log.Printf("from main: %+v", cfg.DefaultLifecycleConfig)
+
 	k8sClientConfig := cfg.GenerateK8sClientConfig(ctrl.GetConfigOrDie())
 
 	logger, atomicLevel, err := tools.NewZapLogger(cfg.LogLevel)
