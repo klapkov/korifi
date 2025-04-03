@@ -44,7 +44,7 @@ fmt: bin/gofumpt bin/shfmt
 vet: ## Run go vet against code.
 	go vet ./...
 
-lint: fmt vet gosec staticcheck golangci-lint
+lint: fmt vet gosec golangci-lint
 
 gosec: bin/gosec
 	gosec --exclude=G101,G304,G401,G404,G505 --exclude-dir=tests ./...

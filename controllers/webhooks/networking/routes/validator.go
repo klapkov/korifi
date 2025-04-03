@@ -226,7 +226,7 @@ func validateFQDN(host, domain string) error {
 }
 
 func validateHost(host string) error {
-	if host == "*" {
+	if host == "*" || host == "" {
 		return nil
 	}
 

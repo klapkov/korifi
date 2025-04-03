@@ -10,12 +10,18 @@ import (
 	apierrors "code.cloudfoundry.org/korifi/api/errors"
 	korifiv1alpha1 "code.cloudfoundry.org/korifi/controllers/api/v1alpha1"
 	"code.cloudfoundry.org/korifi/controllers/webhooks/validation"
+	"code.cloudfoundry.org/korifi/tools/k8s"
 	"github.com/BooleanCat/go-functional/v2/it"
 	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const SecurityGroupResourceType = "Security Group"
+const (
+	SecurityGroupResourceType     = "Security Group"
+	SecurityGroupRunningSpaceType = "running"
+	SecurityGroupStagingSpaceType = "staging"
+)
 
 type SecurityGroupRule struct {
 	Protocol    string `json:"protocol"`
@@ -54,6 +60,30 @@ type CreateSecurityGroupMessage struct {
 	GloballyEnabled SecurityGroupWorkloads
 }
 
+type BindSecurityGroupMessage struct {
+	GUID     string
+	Spaces   []string
+	Workload string
+}
+
+func (m BindSecurityGroupMessage) apply(cfSecurityGroup *korifiv1alpha1.CFSecurityGroup) {
+	if cfSecurityGroup.Spec.Spaces == nil {
+		cfSecurityGroup.Spec.Spaces = make(map[string]korifiv1alpha1.SecurityGroupWorkloads)
+	}
+
+	for _, space := range m.Spaces {
+		workloads := cfSecurityGroup.Spec.Spaces[space]
+
+		if m.Workload == SecurityGroupRunningSpaceType {
+			workloads.Running = true
+		} else {
+			workloads.Staging = true
+		}
+
+		cfSecurityGroup.Spec.Spaces[space] = workloads
+	}
+}
+
 type SecurityGroupRecord struct {
 	GUID            string
 	CreatedAt       time.Time
@@ -64,6 +94,26 @@ type SecurityGroupRecord struct {
 	GloballyEnabled SecurityGroupWorkloads
 	RunningSpaces   []string
 	StagingSpaces   []string
+}
+
+func (r *SecurityGroupRepo) GetSecurityGroup(ctx context.Context, authInfo authorization.Info, GUID string) (SecurityGroupRecord, error) {
+	userClient, err := r.userClientFactory.BuildClient(authInfo)
+	if err != nil {
+		return SecurityGroupRecord{}, fmt.Errorf("failed to build user client: %w", err)
+	}
+
+	cfSecurityGroup := &korifiv1alpha1.CFSecurityGroup{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: r.rootNamespace,
+			Name:      GUID,
+		},
+	}
+
+	if err = userClient.Get(ctx, client.ObjectKeyFromObject(cfSecurityGroup), cfSecurityGroup); err != nil {
+		return SecurityGroupRecord{}, fmt.Errorf("failed to get security group: %w", apierrors.FromK8sError(err, SecurityGroupResourceType))
+	}
+
+	return toSecurityGroupRecord(*cfSecurityGroup), nil
 }
 
 func (r *SecurityGroupRepo) CreateSecurityGroup(ctx context.Context, authInfo authorization.Info, message CreateSecurityGroupMessage) (SecurityGroupRecord, error) {
@@ -114,6 +164,32 @@ func (r *SecurityGroupRepo) CreateSecurityGroup(ctx context.Context, authInfo au
 			}
 		}
 
+		return SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
+	}
+
+	return toSecurityGroupRecord(*cfSecurityGroup), nil
+}
+
+func (r *SecurityGroupRepo) BindSecurityGroup(ctx context.Context, authInfo authorization.Info, message BindSecurityGroupMessage) (SecurityGroupRecord, error) {
+	userClient, err := r.userClientFactory.BuildClient(authInfo)
+	if err != nil {
+		return SecurityGroupRecord{}, fmt.Errorf("failed to build user client: %w", err)
+	}
+
+	cfSecurityGroup := &korifiv1alpha1.CFSecurityGroup{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: r.rootNamespace,
+			Name:      message.GUID,
+		},
+	}
+
+	if err = userClient.Get(ctx, client.ObjectKeyFromObject(cfSecurityGroup), cfSecurityGroup); err != nil {
+		return SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
+	}
+
+	if err = k8s.PatchResource(ctx, userClient, cfSecurityGroup, func() {
+		message.apply(cfSecurityGroup)
+	}); err != nil {
 		return SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
 	}
 

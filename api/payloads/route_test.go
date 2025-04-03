@@ -36,7 +36,7 @@ var _ = Describe("RouteList", func() {
 				AppGUIDs:    "app_guid",
 				SpaceGUIDs:  "space_guid",
 				DomainGUIDs: "domain_guid",
-				Hosts:       "host",
+				Hosts:       []string{"host"},
 				Paths:       "path",
 			}))
 		})

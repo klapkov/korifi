@@ -168,6 +168,8 @@ rules:
   - cfsecuritygroups
   verbs:
   - create
+  - get
+  - patch
 
 - apiGroups:
   - korifi.cloudfoundry.org
