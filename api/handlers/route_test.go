@@ -201,7 +201,7 @@ var _ = Describe("Route", func() {
 					AppGUIDs:    "a1,a2",
 					SpaceGUIDs:  "s1,s2",
 					DomainGUIDs: "d1,d2",
-					Hosts:       "h1,h2",
+					Hosts:       []string{"h1,h2"},
 					Paths:       "p1,p2",
 				}
 				requestValidator.DecodeAndValidateURLValuesStub = decodeAndValidateURLValuesStub(payload)
