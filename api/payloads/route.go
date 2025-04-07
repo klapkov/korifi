@@ -19,7 +19,6 @@ type RouteCreate struct {
 
 func (p RouteCreate) Validate() error {
 	return jellidation.ValidateStruct(&p,
-		jellidation.Field(&p.Host, jellidation.Required),
 		jellidation.Field(&p.Relationships, jellidation.NotNil),
 		jellidation.Field(&p.Metadata),
 	)
@@ -54,7 +53,7 @@ type RouteList struct {
 	AppGUIDs    string
 	SpaceGUIDs  string
 	DomainGUIDs string
-	Hosts       string
+	Hosts       []string
 	Paths       string
 }
 
@@ -63,7 +62,7 @@ func (p RouteList) ToMessage() repositories.ListRoutesMessage {
 		AppGUIDs:    parse.ArrayParam(p.AppGUIDs),
 		SpaceGUIDs:  parse.ArrayParam(p.SpaceGUIDs),
 		DomainGUIDs: parse.ArrayParam(p.DomainGUIDs),
-		Hosts:       parse.ArrayParam(p.Hosts),
+		Hosts:       p.Hosts,
 		Paths:       parse.ArrayParam(p.Paths),
 	}
 }
@@ -76,9 +75,23 @@ func (p *RouteList) DecodeFromURLValues(values url.Values) error {
 	p.AppGUIDs = values.Get("app_guids")
 	p.SpaceGUIDs = values.Get("space_guids")
 	p.DomainGUIDs = values.Get("domain_guids")
-	p.Hosts = values.Get("hosts")
+	p.Hosts = decodeHosts(values)
 	p.Paths = values.Get("paths")
 	return nil
+}
+
+func decodeHosts(values url.Values) []string {
+	hosts := []string{}
+	if values.Has("hosts") {
+		hostsStr := values.Get("hosts")
+		if hostsStr == "" {
+			hosts = append(hosts, "")
+		} else {
+			hosts = parse.ArrayParam(hostsStr)
+		}
+	}
+
+	return hosts
 }
 
 type RoutePatch struct {
