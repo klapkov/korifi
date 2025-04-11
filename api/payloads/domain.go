@@ -1,7 +1,6 @@
 package payloads
 
 import (
-	"errors"
 	"net/url"
 
 	"code.cloudfoundry.org/korifi/api/payloads/parse"
@@ -26,13 +25,13 @@ func (c DomainCreate) Validate() error {
 }
 
 func (c *DomainCreate) ToMessage() (repositories.CreateDomainMessage, error) {
-	if c.Internal {
-		return repositories.CreateDomainMessage{}, errors.New("internal domains are not supported")
-	}
+	// if c.Internal {
+	// 	return repositories.CreateDomainMessage{}, errors.New("internal domains are not supported")
+	// }
 
-	if len(c.Relationships) > 0 {
-		return repositories.CreateDomainMessage{}, errors.New("private domains are not supported")
-	}
+	// if len(c.Relationships) > 0 {
+	// 	return repositories.CreateDomainMessage{}, errors.New("private domains are not supported")
+	// }
 
 	return repositories.CreateDomainMessage{
 		Name: c.Name,
