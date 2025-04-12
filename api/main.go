@@ -322,6 +322,7 @@ func main() {
 			*serverURL,
 			cfg.InfoConfig,
 		),
+		handlers.NewInfoV2(*serverURL),
 		handlers.NewResourceMatches(),
 		handlers.NewApp(
 			*serverURL,
