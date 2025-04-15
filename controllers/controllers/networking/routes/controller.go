@@ -403,6 +403,9 @@ func generateServiceName(destination korifiv1alpha1.Destination) string {
 }
 
 func buildFQDN(cfRoute *korifiv1alpha1.CFRoute, cfDomain *korifiv1alpha1.CFDomain) string {
+	if cfRoute.Spec.Host == "" {
+		return cfDomain.Spec.Name
+	}
 	return fmt.Sprintf("%s.%s", strings.ToLower(cfRoute.Spec.Host), cfDomain.Spec.Name)
 }
 
