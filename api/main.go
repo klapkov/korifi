@@ -403,6 +403,7 @@ func main() {
 				handlers.ServiceBrokerUpdateJobType:          serviceBrokerRepo,
 				handlers.ManagedServiceInstanceCreateJobType: serviceInstanceRepo,
 				handlers.ManagedServiceBindingCreateJobType:  serviceBindingRepo,
+				handlers.SpaceDeleteUnmappedRoutesType:       routeRepo,
 			},
 			500*time.Millisecond,
 		),
