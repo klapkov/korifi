@@ -61,4 +61,17 @@ rules:
   verbs:
   - get
   - list
+  - delete'
+
+- apiGroups:
+  - korifi.cloudfoundry.org
+  resources:
+  - cfsecuritygroups
+  verbs:
+  - create
   - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

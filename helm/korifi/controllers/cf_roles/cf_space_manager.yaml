@@ -74,3 +74,16 @@ rules:
   - rolebindings
   verbs:
   - delete
+
+- apiGroups:
+  - korifi.cloudfoundry.org
+  resources:
+  - cfsecuritygroups
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
