@@ -205,7 +205,7 @@ func (r *SecurityGroupRepo) CreateSecurityGroup(ctx context.Context, authInfo au
 
 func (r *SecurityGroupRepo) ListSecurityGroups(ctx context.Context, authInfo authorization.Info, message ListSecurityGroupMessage) ([]SecurityGroupRecord, error) {
 	securityGroupList := &korifiv1alpha1.CFSecurityGroupList{}
-	if err := r.klient.List(ctx, securityGroupList); err != nil {
+	if err := r.klient.List(ctx, securityGroupList, InNamespace(r.rootNamespace)); err != nil {
 		return []SecurityGroupRecord{}, apierrors.FromK8sError(err, SecurityGroupResourceType)
 	}
 
