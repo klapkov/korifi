@@ -25,6 +25,7 @@ rules:
       - cfpackages
       - cfprocesses
       - cfroutes
+      - cfsecuritygroups
       - cfservicebindings
       - cfserviceinstances
       - cfspaces
