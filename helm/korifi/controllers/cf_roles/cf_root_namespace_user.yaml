@@ -61,7 +61,7 @@ rules:
   verbs:
   - get
   - list
-  - delete'
+  - delete
 
 - apiGroups:
   - korifi.cloudfoundry.org
