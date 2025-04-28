@@ -19,7 +19,6 @@ package domains
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	korifiv1alpha1 "code.cloudfoundry.org/korifi/controllers/api/v1alpha1"
 	validationwebhook "code.cloudfoundry.org/korifi/controllers/webhooks/validation"
@@ -79,21 +78,21 @@ func (v *Validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 		}.ExportJSONError()
 	}
 
-	// isOverlapping, err := v.domainIsOverlapping(ctx, domain.Spec.Name)
-	// if err != nil {
-	// 	log.Info("error checking for overlapping domain", "reason", err)
-	// 	return nil, validationwebhook.ValidationError{
-	// 		Type:    validationwebhook.UnknownErrorType,
-	// 		Message: validationwebhook.UnknownErrorMessage,
-	// 	}.ExportJSONError()
-	// }
+	isOverlapping, err := v.domainIsOverlapping(ctx, domain.Spec.Name)
+	if err != nil {
+		log.Info("error checking for overlapping domain", "reason", err)
+		return nil, validationwebhook.ValidationError{
+			Type:    validationwebhook.UnknownErrorType,
+			Message: validationwebhook.UnknownErrorMessage,
+		}.ExportJSONError()
+	}
 
-	// if isOverlapping {
-	// 	return nil, validationwebhook.ValidationError{
-	// 		Type:    DuplicateDomainErrorType,
-	// 		Message: "Overlapping domain exists",
-	// 	}.ExportJSONError()
-	// }
+	if isOverlapping {
+		return nil, validationwebhook.ValidationError{
+			Type:    DuplicateDomainErrorType,
+			Message: "Overlapping domain exists",
+		}.ExportJSONError()
+	}
 
 	return nil, nil
 }
@@ -138,11 +137,11 @@ func (v *Validator) domainIsOverlapping(ctx context.Context, domainName string) 
 		return true, err
 	}
 
-	domainElements := strings.Split(domainName, ".")
+	// domainElements := strings.Split(domainName, ".")
 
 	for _, existingDomain := range existingDomainList.Items {
-		existingDomainElements := strings.Split(existingDomain.Spec.Name, ".")
-		if isSubDomain(domainElements, existingDomainElements) {
+		// existingDomainElements := strings.Split(existingDomain.Spec.Name, ".")
+		if existingDomain.Spec.Name == domainName {
 			return true, nil
 		}
 	}
