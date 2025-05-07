@@ -245,23 +245,11 @@ rules:
   verbs:
   - use
 - apiGroups:
-  - crd.projectcalico.org
-  resources:
-  - networkpolicies
-  - tier.networkpolicies
-  - tiers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - projectcalico.org
   resources:
+  - globalnetworkpolicies
   - networkpolicies
+  - tier.globalnetworkpolicies
   - tier.networkpolicies
   - tiers
   verbs:

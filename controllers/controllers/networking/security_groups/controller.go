@@ -86,7 +86,9 @@ func (r *Reconciler) spaceUpdatesToSecurityGroups(ctx context.Context, o client.
 // +kubebuilder:rbac:groups=korifi.cloudfoundry.org,resources=cfsecuritygroups,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=korifi.cloudfoundry.org,resources=cfsecuritygroups/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=korifi.cloudfoundry.org,resources=cfsecuritygroups/finalizers,verbs=update
-// +kubebuilder:rbac:groups=crd.projectcalico.org,resources=networkpolicies,tiers;tier.networkpolicies,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=projectcalico.org,resources=networkpolicies;globalnetworkpolicies;tiers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=projectcalico.org,resources=tier.networkpolicies,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=projectcalico.org,resources=tier.globalnetworkpolicies,verbs=get;list;watch;create;update;patch;delete
 
 func (r *Reconciler) ReconcileResource(ctx context.Context, sg *korifiv1alpha1.CFSecurityGroup) (ctrl.Result, error) {
 	log := logr.FromContextOrDiscard(ctx)
@@ -105,12 +107,12 @@ func (r *Reconciler) ReconcileResource(ctx context.Context, sg *korifiv1alpha1.C
 		}
 	}
 
-	// if sg.Spec.GloballyEnabled.Running || sg.Spec.GloballyEnabled.Staging {
-	// 	sg.Labels = tools.SetMapValue(sg.Labels, korifiv1alpha1.CFSecurityGroupTypeLabel, korifiv1alpha1.CFSecurityGroupTypeGlobal)
-	// 	if err := r.reconcileGlobalNetworkPolicies(ctx, sg); err != nil {
-	// 		return ctrl.Result{}, err
-	// 	}
-	// }
+	if sg.Spec.GloballyEnabled.Running || sg.Spec.GloballyEnabled.Staging {
+		sg.Labels = tools.SetMapValue(sg.Labels, korifiv1alpha1.CFSecurityGroupTypeLabel, korifiv1alpha1.CFSecurityGroupTypeGlobal)
+		if err := r.reconcileGlobalNetworkPolicies(ctx, sg); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
 
 	if err := r.cleanOrphanedPolicies(ctx, sg); err != nil {
 		return ctrl.Result{}, err
@@ -121,40 +123,60 @@ func (r *Reconciler) ReconcileResource(ctx context.Context, sg *korifiv1alpha1.C
 }
 
 func (r *Reconciler) finalizeCFSecurityGroup(ctx context.Context, sg *korifiv1alpha1.CFSecurityGroup) (ctrl.Result, error) {
-	log := logr.FromContextOrDiscard(ctx).WithName("finalize-security-group")
+	logs := logr.FromContextOrDiscard(ctx).WithName("finalize-security-group")
 
-	policies, err := r.calicoClient.ProjectcalicoV3().NetworkPolicies(sg.Name).List(ctx, metav1.ListOptions{
-		FieldSelector: fmt.Sprintf("metadata.name=%s", sg.Name),
+	policies, err := r.calicoClient.ProjectcalicoV3().NetworkPolicies("").List(ctx, metav1.ListOptions{
+		FieldSelector: fmt.Sprintf("metadata.name=%s", fmt.Sprintf("default.%s", sg.Name)),
 	})
+
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to list NetworkPolicies: %w", err)
 	}
 
 	for _, policy := range policies.Items {
-		if err := r.calicoClient.ProjectcalicoV3().NetworkPolicies("").Delete(ctx, policy.Name, metav1.DeleteOptions{}); err != nil {
+		if err := r.k8sClient.Delete(ctx, &policy); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to delete NetworkPolicy %s: %w", policy.Name, err)
 		}
 	}
 
+	globalPolicies, err := r.calicoClient.ProjectcalicoV3().GlobalNetworkPolicies().List(ctx, metav1.ListOptions{
+		FieldSelector: fmt.Sprintf("metadata.name=%s", fmt.Sprintf("default.%s", sg.Name)),
+	})
+
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to list NetworkPolicies: %w", err)
+	}
+
+	for _, globalPolicy := range globalPolicies.Items {
+		if err := r.k8sClient.Delete(ctx, &globalPolicy); err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to delete NetworkPolicy %s: %w", globalPolicy.Name, err)
+		}
+	}
+
 	if controllerutil.RemoveFinalizer(sg, korifiv1alpha1.CFSecurityGroupFinalizerName) {
-		log.V(1).Info("finalizer removed")
+		logs.V(1).Info("finalizer removed")
 	}
 	return ctrl.Result{}, nil
 }
 
-func (r *Reconciler) reconcileGlobalNetworkPolicies(ctx context.Context, sg *korifiv1alpha1.CFSecurityGroup) error {
-	spaces := &korifiv1alpha1.CFSpaceList{}
-	if err := r.k8sClient.List(ctx, spaces); err != nil {
-		return fmt.Errorf("failed to list CFSpaces: %w", err)
+func (r *Reconciler) cleanOrphanedPolicies(ctx context.Context, sg *korifiv1alpha1.CFSecurityGroup) error {
+	policies := &v3.NetworkPolicyList{}
+
+	policies, err := r.calicoClient.ProjectcalicoV3().NetworkPolicies("").List(ctx, metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s,%s=%s",
+			korifiv1alpha1.CFSecurityGroupNameLabel, sg.Name,
+			korifiv1alpha1.CFSecurityGroupTypeLabel, korifiv1alpha1.CFSecurityGroupTypeSpaceScoped),
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to list NetworkPolicies: %w", err)
 	}
 
-	for _, space := range spaces.Items {
-		if err := r.reconcileNetworkPolicyForSpace(ctx, sg, space.Name,
-			korifiv1alpha1.SecurityGroupWorkloads{
-				Running: sg.Spec.GloballyEnabled.Running,
-				Staging: sg.Spec.GloballyEnabled.Staging,
-			}); err != nil {
-			return err
+	for _, policy := range policies.Items {
+		if _, exists := sg.Spec.Spaces[policy.Namespace]; !exists {
+			if err := r.k8sClient.Delete(ctx, &policy); err != nil && !apierrors.IsNotFound(err) {
+				return fmt.Errorf("failed to delete orphaned NetworkPolicy %s/%s: %w", policy.Namespace, policy.Name, err)
+			}
 		}
 	}
 
@@ -171,79 +193,69 @@ func (r *Reconciler) reconcileNetworkPolicies(ctx context.Context, sg *korifiv1a
 }
 
 func (r *Reconciler) reconcileNetworkPolicyForSpace(ctx context.Context, sg *korifiv1alpha1.CFSecurityGroup, space string, workloads korifiv1alpha1.SecurityGroupWorkloads) error {
-	logs := r.log.WithValues("securityGroup", sg.Name, "space", space)
-
 	policy := &v3.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      sg.Name,
+			Name:      fmt.Sprintf("default.%s", sg.Name),
 			Namespace: space,
 		},
 	}
 
-	// policy, err := securityGroupToNetworkPolicy(sg, space, workloads)
-	// if err != nil {
-	// 	return err
-	// }
-
-	_, err = ctrl.CreateOrUpdate(ctx, r.k8sClient, policy, func())
-
-	// _, err := r.calicoClient.ProjectcalicoV3().NetworkPolicies(space).Get(ctx, sg.Name, metav1.GetOptions{})
-	// if err != nil {
-	// 	logs.Error(err, "not found")
-	// 	if apierrors.IsNotFound(err) {
-	// 		return r.createNetworkPolicy(ctx, sg, space, workloads)
-	// 	}
-	// 	return fmt.Errorf("failed to get NetworkPolicy %s/%s: %w", space, sg.Name, err)
-	// }
-
-	// updatedPolicy, err := securityGroupToNetworkPolicy(sg, space, workloads)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// updatedPolicy.Labels = tools.SetMapValue(updatedPolicy.Labels, korifiv1alpha1.CFSecurityGroupTypeLabel, sg.Labels[korifiv1alpha1.CFSecurityGroupTypeLabel])
-	// if _, err := r.calicoClient.ProjectcalicoV3().NetworkPolicies(space).Update(ctx, updatedPolicy, metav1.UpdateOptions{}); err != nil {
-	// 	logs.Error(err, "failed to update NetworkPolicy")
-	// 	return err
-	// }
-
-	return nil
-}
-
-func (r *Reconciler) cleanOrphanedPolicies(ctx context.Context, sg *korifiv1alpha1.CFSecurityGroup) error {
-	policies, err := r.calicoClient.ProjectcalicoV3().NetworkPolicies("").List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s,%s=%s",
-			korifiv1alpha1.CFSecurityGroupNameLabel, sg.Name,
-			korifiv1alpha1.CFSecurityGroupTypeLabel, korifiv1alpha1.CFSecurityGroupTypeSpaceScoped),
-	})
+	err := r.k8sClient.Get(ctx, client.ObjectKeyFromObject(policy), policy)
 	if err != nil {
-		return fmt.Errorf("failed to list NetworkPolicies: %w", err)
+		if apierrors.IsNotFound(err) {
+			return r.createNetworkPolicy(ctx, sg, space, workloads, policy)
+		}
+		return fmt.Errorf("failed to get NetworkPolicy %s/%s: %w", space, sg.Name, err)
 	}
 
-	for _, policy := range policies.Items {
-		if _, exists := sg.Spec.Spaces[policy.Namespace]; !exists {
-			if err := r.calicoClient.ProjectcalicoV3().NetworkPolicies("").Delete(ctx, policy.Name, metav1.DeleteOptions{}); err != nil && !apierrors.IsNotFound(err) {
-				return fmt.Errorf("failed to delete orphaned NetworkPolicy %s/%s: %w", policy.Namespace, policy.Name, err)
-			}
-		}
+	err = securityGroupToNetworkPolicy(sg, workloads, policy)
+	if err != nil {
+		return err
+	}
+
+	if err = r.k8sClient.Update(ctx, policy); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (r *Reconciler) createNetworkPolicy(ctx context.Context, sg *korifiv1alpha1.CFSecurityGroup, space string, workloads korifiv1alpha1.SecurityGroupWorkloads) error {
-	policy, err := securityGroupToNetworkPolicy(sg, space, workloads)
+func (r *Reconciler) reconcileGlobalNetworkPolicies(ctx context.Context, sg *korifiv1alpha1.CFSecurityGroup) error {
+	policy := &v3.GlobalNetworkPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("default.%s", sg.Name),
+		},
+	}
+
+	err := r.k8sClient.Get(ctx, client.ObjectKeyFromObject(policy), policy)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return r.createGlobalNetworkPolicy(ctx, sg, policy)
+		}
+		return fmt.Errorf("failed to get NetworkPolicy %s: %w", sg.Name, err)
+	}
+
+	err = securityGroupToGlobalNetworkPolicy(sg, policy)
 	if err != nil {
 		return err
 	}
 
 	policy.Labels = tools.SetMapValue(policy.Labels, korifiv1alpha1.CFSecurityGroupTypeLabel, sg.Labels[korifiv1alpha1.CFSecurityGroupTypeLabel])
-	// if _, err := r.calicoClient.ProjectcalicoV3().NetworkPolicies(space).Create(ctx, policy, metav1.CreateOptions{}); err != nil {
-	// 	r.log.Error(err, "failed to create NetworkPolicy", "namespace", space, "name", sg.Name)
-	// 	return err
-	// }
-	ctrl.CreateOrUpdate()
+	if err = r.k8sClient.Update(ctx, policy); err != nil {
+		return err
+	}
 
+	return nil
+}
+
+func (r *Reconciler) createNetworkPolicy(ctx context.Context, sg *korifiv1alpha1.CFSecurityGroup, space string, workloads korifiv1alpha1.SecurityGroupWorkloads, policy *v3.NetworkPolicy) error {
+	err := securityGroupToNetworkPolicy(sg, workloads, policy)
+	if err != nil {
+		return err
+	}
+
+	policy.Labels = tools.SetMapValue(policy.Labels, korifiv1alpha1.CFSecurityGroupTypeLabel, sg.Labels[korifiv1alpha1.CFSecurityGroupTypeLabel])
+	policy.Labels = tools.SetMapValue(policy.Labels, korifiv1alpha1.CFSecurityGroupNameLabel, sg.Name)
 	if err = r.k8sClient.Create(ctx, policy); err != nil {
 		r.log.Error(err, "failed to create NetworkPolicy", "namespace", space, "name", sg.Name)
 		return err
@@ -252,39 +264,47 @@ func (r *Reconciler) createNetworkPolicy(ctx context.Context, sg *korifiv1alpha1
 	return nil
 }
 
-func securityGroupToNetworkPolicy(sg *korifiv1alpha1.CFSecurityGroup, space string, workloads korifiv1alpha1.SecurityGroupWorkloads) (*v3.NetworkPolicy, error) {
+func (r *Reconciler) createGlobalNetworkPolicy(ctx context.Context, sg *korifiv1alpha1.CFSecurityGroup, policy *v3.GlobalNetworkPolicy) error {
+	err := securityGroupToGlobalNetworkPolicy(sg, policy)
+	if err != nil {
+		return err
+	}
+
+	policy.Labels = tools.SetMapValue(policy.Labels, korifiv1alpha1.CFSecurityGroupTypeLabel, sg.Labels[korifiv1alpha1.CFSecurityGroupTypeLabel])
+	policy.Labels = tools.SetMapValue(policy.Labels, korifiv1alpha1.CFSecurityGroupNameLabel, sg.Name)
+	if err = r.k8sClient.Create(ctx, policy); err != nil {
+		r.log.Error(err, "failed to create NetworkPolicy", "name", sg.Name)
+		return err
+	}
+
+	return nil
+}
+
+func securityGroupToGlobalNetworkPolicy(sg *korifiv1alpha1.CFSecurityGroup, policy *v3.GlobalNetworkPolicy) error {
 	egressRules, err := buildEgressRules(sg.Spec.Rules)
 	if err != nil {
-		return &v3.NetworkPolicy{}, err
+		return err
 	}
 
-	var workloadTypes []string
-	if workloads.Running {
-		workloadTypes = append(workloadTypes, korifiv1alpha1.CFWorkloadTypeApp)
+	policy.Spec.Egress = egressRules
+	policy.Spec.Selector = buildSelector(sg.Spec.GloballyEnabled)
+	policy.Spec.Types = []v3.PolicyType{v3.PolicyTypeEgress}
+	policy.Spec.NamespaceSelector = `all() && ! (kubernetes.io/metadata.name in {"kube-system", "default", "cf", "calico-apiserver", "cert-manager", "istio-system", "korifi-gateway", "kpack", "servicebinding-system", "tigera-operator"})`
+
+	return nil
+}
+
+func securityGroupToNetworkPolicy(sg *korifiv1alpha1.CFSecurityGroup, workloads korifiv1alpha1.SecurityGroupWorkloads, policy *v3.NetworkPolicy) error {
+	egressRules, err := buildEgressRules(sg.Spec.Rules)
+	if err != nil {
+		return err
 	}
 
-	if workloads.Staging {
-		workloadTypes = append(workloadTypes, korifiv1alpha1.CFWorkloadTypeBuild)
-	}
+	policy.Spec.Egress = egressRules
+	policy.Spec.Selector = buildSelector(workloads)
+	policy.Spec.Types = []v3.PolicyType{v3.PolicyTypeEgress}
 
-	var selector string
-	if len(workloadTypes) > 0 {
-		// Construct Calico selector string: "key in { 'value1', 'value2' }"
-		values := "'" + strings.Join(workloadTypes, "', '") + "'"
-		selector = fmt.Sprintf("%s in { %s }", korifiv1alpha1.CFWorkloadTypeLabelkey, values)
-	}
-
-	return &v3.NetworkPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      sg.Name,
-			Namespace: space,
-		},
-		Spec: v3.NetworkPolicySpec{
-			Types:    []v3.PolicyType{v3.PolicyTypeEgress},
-			Egress:   egressRules,
-			Selector: selector,
-		},
-	}, nil
+	return nil
 }
 
 func buildEgressRules(rules []korifiv1alpha1.SecurityGroupRule) ([]v3.Rule, error) {
@@ -336,6 +356,20 @@ func buildRulePorts(rule korifiv1alpha1.SecurityGroupRule) ([]numorstring.Port, 
 	}
 
 	return ports, nil
+}
+
+func buildSelector(workloads korifiv1alpha1.SecurityGroupWorkloads) string {
+	var workloadTypes []string
+
+	if workloads.Running {
+		workloadTypes = append(workloadTypes, korifiv1alpha1.CFWorkloadTypeApp)
+	}
+	if workloads.Staging {
+		workloadTypes = append(workloadTypes, korifiv1alpha1.CFWorkloadTypeBuild)
+	}
+	values := "'" + strings.Join(workloadTypes, "', '") + "'"
+
+	return fmt.Sprintf("%s in { %s }", korifiv1alpha1.CFWorkloadTypeLabelkey, values)
 }
 
 func parseRangePorts(ports string) (numorstring.Port, error) {
@@ -444,7 +478,6 @@ func generateCIDRs(startIP, endIP string) ([]string, error) {
 	return cidrs, nil
 }
 
-// ipToUint32 converts an IPv4 address to a uint32.
 func ipToUint32(ip string) (uint32, error) {
 	parsedIP := net.ParseIP(ip).To4()
 	if parsedIP == nil {
@@ -453,12 +486,10 @@ func ipToUint32(ip string) (uint32, error) {
 	return uint32(parsedIP[0])<<24 | uint32(parsedIP[1])<<16 | uint32(parsedIP[2])<<8 | uint32(parsedIP[3]), nil
 }
 
-// uint32ToIP converts a uint32 to an IPv4 address string.
 func uint32ToIP(ip uint32) string {
 	return fmt.Sprintf("%d.%d.%d.%d", (ip>>24)&0xFF, (ip>>16)&0xFF, (ip>>8)&0xFF, ip&0xFF)
 }
 
-// getProtocol maps a protocol string to a corev1.Protocol.
 func getProtocol(protocol string) string {
 	switch protocol {
 	case korifiv1alpha1.ProtocolTCP:
