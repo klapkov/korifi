@@ -111,10 +111,10 @@ func cfBuildToDroplet(cfBuild *korifiv1alpha1.CFBuild) (DropletRecord, error) {
 
 func cfBuildToDropletRecord(cfBuild korifiv1alpha1.CFBuild) DropletRecord {
 	processTypesMap := make(map[string]string)
-	processTypesArrayObject := cfBuild.Status.Droplet.ProcessTypes
-	for index := range processTypesArrayObject {
-		processTypesMap[processTypesArrayObject[index].Type] = processTypesArrayObject[index].Command
-	}
+	// processTypesArrayObject := cfBuild.Status.Droplet.ProcessTypes
+	// for index := range processTypesArrayObject {
+	// 	processTypesMap[processTypesArrayObject[index].Type] = processTypesArrayObject[index].Command
+	// }
 
 	result := DropletRecord{
 		GUID:      cfBuild.Name,
@@ -128,13 +128,13 @@ func cfBuildToDropletRecord(cfBuild korifiv1alpha1.CFBuild) DropletRecord {
 				Stack:      cfBuild.Spec.Lifecycle.Data.Stack,
 			},
 		},
-		Stack:        cfBuild.Status.Droplet.Stack,
+		// Stack:        cfBuild.Status.Droplet.Stack,
 		ProcessTypes: processTypesMap,
 		AppGUID:      cfBuild.Spec.AppRef.Name,
 		PackageGUID:  cfBuild.Spec.PackageRef.Name,
 		Labels:       cfBuild.Labels,
 		Annotations:  cfBuild.Annotations,
-		Ports:        cfBuild.Status.Droplet.Ports,
+		// Ports:        cfBuild.Status.Droplet.Ports,
 	}
 
 	if cfBuild.Spec.Lifecycle.Type == "docker" {
