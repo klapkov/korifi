@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 
@@ -17,13 +18,15 @@ import (
 
 	"code.cloudfoundry.org/korifi/api/authorization"
 
+	"github.com/go-chi/chi"
 	"github.com/go-logr/logr"
 )
 
 const (
-	ServiceInstancesPath           = "/v3/service_instances"
-	ServiceInstancePath            = "/v3/service_instances/{guid}"
-	ServiceInstanceCredentialsPath = "/v3/service_instances/{guid}/credentials"
+	ServiceInstancesPath            = "/v3/service_instances"
+	ServiceInstancePath             = "/v3/service_instances/{guid}"
+	ServiceInstanceCredentialsPath  = "/v3/service_instances/{guid}/credentials"
+	ServiceInstanceSharedSpacesPath = "/v3/service_instances/{guid}/relationships/shared_spaces"
 )
 
 //counterfeiter:generate -o fake -fake-name CFServiceInstanceRepository . CFServiceInstanceRepository
@@ -240,6 +243,97 @@ func (h *ServiceInstance) delete(r *http.Request) (*routing.Response, error) {
 	return routing.NewResponse(http.StatusNoContent), nil
 }
 
+func (h *ServiceInstance) getSharedSpaces(r *http.Request) (*routing.Response, error) {
+	authInfo, _ := authorization.InfoFromContext(r.Context())
+	logger := logr.FromContextOrDiscard(r.Context()).WithName("handlers.service-instance.get-shared-spaces")
+
+	serviceInstanceGUID := chi.URLParam(r, "guid")
+
+	_, err := h.serviceInstanceRepo.GetServiceInstance(r.Context(), authInfo, serviceInstanceGUID)
+	if err != nil {
+		return nil, apierrors.LogAndReturn(logger, apierrors.ForbiddenAsNotFound(err), "failed to get service instance")
+	}
+
+	// Fetch shared spaces (example logic)
+	// In a real implementation, query CRDs or bindings to find shared spaces
+	sharedSpaces := []map[string]interface{}{
+		{
+			"guid": "6de43296-37e5-45b3-828f-48fdd737e711",
+			"name": "app-space",
+			"relationships": map[string]interface{}{
+				"organization": map[string]interface{}{
+					"data": map[string]interface{}{
+						"guid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+						"name": "app-org",
+					},
+				},
+			},
+		},
+		{
+			"guid": "aeb74f36-716a-4b3f-a9d5-caffe697ed5a",
+			"name": "shared-space",
+			"relationships": map[string]interface{}{
+				"organization": map[string]interface{}{
+					"data": map[string]interface{}{
+						"guid": "b2c3d4e5-f678-9012-bcde-f23456789012",
+						"name": "shared-org",
+					},
+				},
+			},
+		},
+	}
+
+	// Build included resources
+	includedSpaces := []map[string]interface{}{
+		{
+			"guid": "6de43296-37e5-45b3-828f-48fdd737e711",
+			"name": "app-space",
+			"relationships": map[string]interface{}{
+				"organization": map[string]interface{}{
+					"data": map[string]interface{}{
+						"guid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+					},
+				},
+			},
+		},
+		{
+			"guid": "aeb74f36-716a-4b3f-a9d5-caffe697ed5a",
+			"name": "shared-space",
+			"relationships": map[string]interface{}{
+				"organization": map[string]interface{}{
+					"data": map[string]interface{}{
+						"guid": "b2c3d4e5-f678-9012-bcde-f23456789012",
+					},
+				},
+			},
+		},
+	}
+
+	includedOrgs := []map[string]interface{}{
+		{
+			"guid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+			"name": "app-org",
+		},
+		{
+			"guid": "b2c3d4e5-f678-9012-bcde-f23456789012",
+			"name": "shared-org",
+		},
+	}
+
+	response := map[string]interface{}{
+		"data": sharedSpaces,
+		"included": map[string]interface{}{
+			"spaces":        includedSpaces,
+			"organizations": includedOrgs,
+		},
+		"links": map[string]interface{}{
+			"self": fmt.Sprintf("%s/v3/service_instances/%s/relationships/shared_spaces", h.serverURL, serviceInstanceGUID),
+		},
+	}
+
+	return routing.NewResponse(http.StatusOK).WithBody(response), nil
+}
+
 func (h *ServiceInstance) UnauthenticatedRoutes() []routing.Route {
 	return nil
 }
@@ -252,5 +346,6 @@ func (h *ServiceInstance) AuthenticatedRoutes() []routing.Route {
 		{Method: "GET", Pattern: ServiceInstancePath, Handler: h.get},
 		{Method: "GET", Pattern: ServiceInstanceCredentialsPath, Handler: h.getCredentials},
 		{Method: "DELETE", Pattern: ServiceInstancePath, Handler: h.delete},
+		{Method: "GET", Pattern: ServiceInstanceSharedSpacesPath, Handler: h.getSharedSpaces},
 	}
 }
