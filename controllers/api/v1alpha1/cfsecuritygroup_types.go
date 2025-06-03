@@ -16,9 +16,9 @@ const (
 	CFSecurityGroupTypeLabel       = "korifi.cloudfoundry.org/security-group-type"
 	CFSecurityGroupTypeGlobal      = "global"
 	CFSecurityGroupTypeSpaceScoped = "space-scoped"
-	CFSecurityGroupNameLabel       = "korifi.cloudfoundry.org/security-group-name"
-	CFSecurityGroupFinalizerName   = "cfSecurityGroup.korifi.cloudfoundry.org"
-	CFWorkloadTypeLabelkey         = "korifi.cloudfoundry.org/workload-type"
+	// CFSecurityGroupNameLabel       = "korifi.cloudfoundry.org/security-group-name"
+	CFSecurityGroupFinalizerName = "cfSecurityGroup.korifi.cloudfoundry.org"
+	CFWorkloadTypeLabelkey       = "korifi.cloudfoundry.org/workload-type"
 )
 
 type SecurityGroupRule struct {

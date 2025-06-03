@@ -31,6 +31,7 @@ import (
 	"code.cloudfoundry.org/korifi/tools/k8s"
 	toolsregistry "code.cloudfoundry.org/korifi/tools/registry"
 	"code.cloudfoundry.org/korifi/version"
+	projectcalicoV3 "github.com/projectcalico/api/pkg/apis/projectcalico/v3"
 
 	chiMiddlewares "github.com/go-chi/chi/middleware"
 	buildv1alpha2 "github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
@@ -55,6 +56,7 @@ func init() {
 	utilruntime.Must(korifiv1alpha1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(buildv1alpha2.AddToScheme(scheme.Scheme))
 	utilruntime.Must(metricsv1beta1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(projectcalicoV3.AddToScheme(scheme.Scheme))
 }
 
 func main() {

@@ -67,7 +67,7 @@ import (
 	"code.cloudfoundry.org/korifi/tools"
 	"code.cloudfoundry.org/korifi/tools/image"
 	"code.cloudfoundry.org/korifi/version"
-	v3 "github.com/projectcalico/api/pkg/apis/projectcalico/v3"
+	projectcalicoV3 "github.com/projectcalico/api/pkg/apis/projectcalico/v3"
 
 	buildv1alpha2 "github.com/pivotal/kpack/pkg/apis/build/v1alpha2"
 	"github.com/projectcalico/api/pkg/client/clientset_generated/clientset"
@@ -100,7 +100,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(gatewayv1beta1.Install(scheme))
 	utilruntime.Must(korifiv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(v3.AddToScheme(scheme))
+	utilruntime.Must(projectcalicoV3.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
